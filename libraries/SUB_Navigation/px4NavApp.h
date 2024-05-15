@@ -1,24 +1,5 @@
 #pragma once
 
-#include <px4_platform_common/defines.h>
-#include <px4_platform_common/module.h>
-#include <px4_platform_common/module_params.h>
-#include <px4_platform_common/posix.h>
-#include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
-
-#include <drivers/drv_hrt.h>
-#include <lib/perf/perf_counter.h>
-
-#include <uORB/Publication.hpp>
-#include <uORB/Subscription.hpp>
-#include <uORB/SubscriptionCallback.hpp>
-#include <uORB/topics/psins_output.h>
-
-#include <uORB/topics/vehicle_acceleration.h>
-#include <uORB/topics/vehicle_angular_velocity.h>
-#include <uORB/topics/vehicle_magnetometer.h>
-#include <uORB/topics/sensor_gps.h>
-
 #include "KFApp.h"
 
 #define STATE_INIT (100)
@@ -29,12 +10,9 @@
 #define INITIM		(5)			// 对准时间
 #define ALNTIM		(5)			// 对准时间
 #define IKFTIM		(25)		// 对准时间
-
 #define LOGONOFF	(TRUE)
-
 #define THRESHOLD_K 	(114591.55)
 
-using namespace time_literals;
 
 class px4NavApp : public ModuleBase<px4NavApp>, public ModuleParams, public px4::ScheduledWorkItem
 {
@@ -92,17 +70,4 @@ private:
 	bool gnssUdt = false;
 	
 	CVect3 vel_nhc_proc(CVect3 &vn, CMat3 &Cnb);
-
-	void Run() override;
-
-	// Publications
-	uORB::Publication<psins_output_s> _orb_psins_pub{ORB_ID(orb_psins_output)};
-
-	// Subscriptions
-	uORB::Subscription  _vehicle_acceleration_sub{ORB_ID(vehicle_acceleration)};   // regular subscription for parameter updates
-	uORB::Subscription  _vehicle_angular_velocity_sub{ORB_ID(vehicle_angular_velocity)}; // regular subscription for additional data
-	uORB::Subscription  _vehicle_magnetometer_sub{ORB_ID(vehicle_magnetometer)};   // regular subscription for parameter updates
-	uORB::Subscription  _sensor_gps_sub{ORB_ID(sensor_gps)};   					   // regular subscription for parameter updates
-
-	perf_counter_t _loop_interval_perf{perf_alloc(PC_INTERVAL, MODULE_NAME": interval")};
 };

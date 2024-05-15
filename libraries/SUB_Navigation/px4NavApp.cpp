@@ -1,4 +1,4 @@
-#include "px4NavApp.hpp"
+#include "px4NavApp.h"
 #include "KFApp.h"
 
 px4NavApp::px4NavApp() : ModuleParams(nullptr), ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::hp_default)
