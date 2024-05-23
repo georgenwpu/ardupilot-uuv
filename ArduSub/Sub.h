@@ -52,6 +52,7 @@
 #include <AP_Mount/AP_Mount.h>           // Camera/Antenna mount
 #include <AP_Vehicle/AP_Vehicle.h>         // needed for AHRS build
 #include <AP_InertialNav/AP_InertialNav.h>     // inertial navigation library
+#include <SUB_Navigation/px4NavApp.h>       // PX4NavApp
 #include <AC_WPNav/AC_WPNav.h>           // Waypoint navigation library
 #include <AC_WPNav/AC_Loiter.h>
 #include <AC_WPNav/AC_Circle.h>          // circle navigation library
@@ -321,8 +322,13 @@ private:
 
     // Inertial Navigation
     AP_InertialNav inertial_nav;
-
     AP_AHRS_View ahrs_view;
+
+    // Sub_Nav_PhiKF
+#ifdef ECKB_NAV
+    px4NavApp px4navapp;
+    #define KFTS 0.01
+#endif
 
     // Attitude, Position and Waypoint navigation objects
     // To-Do: move inertial nav up or other navigation variables down here

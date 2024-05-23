@@ -147,6 +147,10 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     FAST_TASK(Log_Video_Stabilisation),
 #endif
 
+// #ifdef ECKB_NAV
+//     FAST_TASK_CLASS(px4NavApp, &copter.px4navapp, TimeUpdate),
+// #endif
+
     SCHED_TASK(rc_loop,              250,    130,  3),
     SCHED_TASK(throttle_loop,         50,     75,  6),
 #if AP_FENCE_ENABLED
@@ -756,8 +760,36 @@ void Copter::update_super_simple_bearing(bool force_update)
 
 void Copter::read_AHRS(void)
 {
+    const auto &_ins = AP::ins();
+    const auto &_compass = AP::compass();
+    Vector3f delta_angle, delta_velocity, omg, fsf, mag;
+    float dangle_dt, magnorm;
+
     // we tell AHRS to skip INS update as we have already done it in FAST_TASK.
     ahrs.update(true);
+
+    // Adding PhiKF processing
+    _ins.get_delta_angle(delta_angle, dangle_dt);
+    omg = delta_angle / dangle_dt;
+    _ins.get_delta_velocity(delta_velocity, dangle_dt);
+    fsf = delta_velocity / dangle_dt;
+    if (_compass.available()) {
+        const Vector3f &field_Ga = _compass.get_field();
+        magnorm = field_Ga.x*field_Ga.x + field_Ga.y*field_Ga.y + field_Ga.z*field_Ga.z;
+        if(magnorm>1e-6) mag = field_Ga/magnorm;
+    }
+    
+    phikf_app.setIMU(omg.x, omg.y, omg.z, fsf.x, fsf.y, fsf.z);
+    phikf_app.setMag(mag.x, mag.y, mag.z);
+    phikf_app.TimeUpdate();
+    AP::logger().Write("IMUD", "TimeUS,wx,wy,wz,fx,fy,fz, mx,my,mz", "Qfffffffff",
+                        AP_HAL::micros64(), phikf_app.imub.wm.i, phikf_app.imub.wm.j, phikf_app.imub.wm.k,
+                        phikf_app.imub.vm.i, phikf_app.imub.vm.j, phikf_app.imub.vm.k,
+                        phikf_app.magb.mag.i, phikf_app.magb.mag.j, phikf_app.magb.mag.k);
+    // AP::logger().Write("IMUD", "TimeUS,wx,wy,wz,fx,fy,fz, mx,my,mz", "QBfffffffff",
+    //                     AP_HAL::micros64(), phikf_app.state, phikf_app.imub.wm.i, phikf_app.imub.wm.j, phikf_app.imub.wm.k,
+    //                     phikf_app.imub.vm.i, phikf_app.imub.vm.j, phikf_app.imub.vm.k,
+    //                     phikf_app.magb.mag.i, phikf_app.magb.mag.j, phikf_app.magb.mag.k);
 }
 
 // read baro and log control tuning
@@ -832,8 +864,10 @@ Copter::Copter(void)
     flightmode(&mode_stabilize),
     pos_variance_filt(FS_EKF_FILT_DEFAULT),
     vel_variance_filt(FS_EKF_FILT_DEFAULT),
-    hgt_variance_filt(FS_EKF_FILT_DEFAULT)
+    hgt_variance_filt(FS_EKF_FILT_DEFAULT),
+    phikf_app(TS)
 {
+
 }
 
 Copter copter;

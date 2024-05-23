@@ -405,12 +405,51 @@ void Copter::Log_Write_Guided_Attitude_Target(ModeGuided::SubMode target_type, f
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
 
+void Copter::Log_Write_Vehicle_Startup_Messages()
+{
+    // only 200(?) bytes are guaranteed by AP_Logger
+    char frame_and_type_string[30];
+    copter.motors->get_frame_and_type_string(frame_and_type_string, ARRAY_SIZE(frame_and_type_string));
+    logger.Write_MessageF("%s", frame_and_type_string);
+    logger.Write_Mode((uint8_t)flightmode->mode_number(), control_mode_reason);
+    ahrs.Log_Write_Home_And_Origin();
+    gps.Write_AP_Logger_Log_Startup_messages();
+}
+
+
+// struct PACKED log_ap_phikf {
+//     LOG_PACKET_HEADER;
+//     uint64_t time_us;
+//     double wx;
+//     double wy;
+//     double wz;
+//     double fx;
+//     double fy;
+//     double fz;
+// };
+
+// void Copter::Log_Write_PhiKF_Data(double wx1,double wy1,double wz1,double fx1,double fy1,double fz1)
+// {
+//     struct log_ap_phikf pkt {
+//         LOG_PACKET_HEADER_INIT(LOG_AP_PHIKF_MSG),
+//         time_us         : AP_HAL::micros64(),
+//         wx              : wx1,
+//         wy              : wy1,
+//         wz              : wz1,
+//         fx              : fx1,
+//         fy              : fy1,
+//         fz              : fz1
+//     };
+//     logger.WriteBlock(&pkt, sizeof(pkt));
+// }
+
+
 // type and unit information can be found in
 // libraries/AP_Logger/Logstructure.h; search for "log_Units" for
 // units and "Format characters" for field type information
 const struct LogStructure Copter::log_structure[] = {
     LOG_COMMON_STRUCTURES,
-    
+
 // @LoggerMessage: PTUN
 // @Description: Parameter Tuning information
 // @URL: https://ardupilot.org/copter/docs/tuning.html#in-flight-tuning
@@ -558,6 +597,11 @@ const struct LogStructure Copter::log_structure[] = {
 
     { LOG_GUIDED_ATTITUDE_TARGET_MSG, sizeof(log_Guided_Attitude_Target),
       "GUIA",  "QBffffffff",    "TimeUS,Type,Roll,Pitch,Yaw,RollRt,PitchRt,YawRt,Thrust,ClimbRt", "s-dddkkk-n", "F-000000-0" , true },
+
+    // { LOG_AP_PHIKF_MSG, sizeof(log_ap_phikf),
+    // "PKFD", "Qffffff",         "TimeUS,wx,wy,wz,fx,fy,fz", "s----", "F----", true },
+
+
 };
 
 uint8_t Copter::get_num_log_structures() const
@@ -565,15 +609,5 @@ uint8_t Copter::get_num_log_structures() const
     return ARRAY_SIZE(log_structure);
 }
 
-void Copter::Log_Write_Vehicle_Startup_Messages()
-{
-    // only 200(?) bytes are guaranteed by AP_Logger
-    char frame_and_type_string[30];
-    copter.motors->get_frame_and_type_string(frame_and_type_string, ARRAY_SIZE(frame_and_type_string));
-    logger.Write_MessageF("%s", frame_and_type_string);
-    logger.Write_Mode((uint8_t)flightmode->mode_number(), control_mode_reason);
-    ahrs.Log_Write_Home_And_Origin();
-    gps.Write_AP_Logger_Log_Startup_messages();
-}
 
 #endif // HAL_LOGGING_ENABLED

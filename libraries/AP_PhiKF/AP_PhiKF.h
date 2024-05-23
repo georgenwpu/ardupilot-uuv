@@ -1,5 +1,7 @@
 #pragma once
 
+#include <AP_Common/Location.h>
+#include <GCS_MAVLink/GCS.h>
 #include "KFApp.h"
 
 #define STATE_INIT (100)
@@ -14,37 +16,26 @@
 #define THRESHOLD_K 	(114591.55)
 
 
-class px4NavApp : public ModuleBase<px4NavApp>, public ModuleParams, public px4::ScheduledWorkItem
+class AP_PhiKF
 {
 public:
-	px4NavApp();
-	~px4NavApp() override;
-
-	/** @see ModuleBase */
-	static int task_spawn(int argc, char *argv[]);
-
-	/** @see ModuleBase */
-	static int custom_command(int argc, char *argv[]);
-
-	/** @see ModuleBase */
-	static int print_usage(const char *reason = nullptr);
+	AP_PhiKF(double ts);
+	~AP_PhiKF();
 
 	bool init();
+	void setIMU(double wx, double wy,double wz, double fx, double fy,double fz);
+	void setMag(double mx, double my,double mz);
+	void setGNSS(double vE, double vN, double vU, double Lat, double Lng, double Alt);
+	void TimeUpdate();
+	void MeasureUpdate(CVect3 &fsf, CVect3 &mag, CVect3 &magnk);
+	void MeasureUpdate(CVect3 &vn);
+	void MeasureUpdate(CVect3 &vn, CVect3 &pos);
+	void get_location(Location &loc);
 
-private:
-	static constexpr hrt_abstime INTERVAL_US = 10000_us;
-	static constexpr int MAX_SENSORS = 4;
-
+	double ts;
 	int k_nav = 0, k_ini = 0, k_aln = 0;    		// Sample of NavApp
 	double t_nav = 0;    	// Time of NavApp
 	int state = STATE_INIT;
-
-	vehicle_acceleration_s acce;
-	vehicle_angular_velocity_s gyro;
-	vehicle_magnetometer_s mage;
-	sensor_gps_s gps_s;
-
-	psins_output_s data{};
 
 	DataIMU imub;		// 接收imu数据
 	DataMag magb;		// 接收磁场数据
@@ -63,9 +54,7 @@ private:
 
 	double pitch, roll, yaw;
 	CVect3 dvn, dpos, vel, gnts;
-	CMahony mahony;
 	CKFApp kf;
-	CSINS sins;
 	CEarth earth;
 	bool gnssUdt = false;
 	

@@ -7260,6 +7260,6 @@ void sizedisp(int i)
 	ClsSize(CSINSGNSS);
 	ClsSize(CAutoDrive);
 	ClsSize(CRAvar);
-	if(i>0) printf("\tclassXXX: %10ld\n", i);
+	if(i>0) printf("\tclassXXX: %10d\n", i);
 	exit(0);
 }

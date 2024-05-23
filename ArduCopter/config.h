@@ -639,3 +639,8 @@
 #ifndef USER_PARAMS_ENABLED
   #define USER_PARAMS_ENABLED DISABLED
 #endif
+
+
+#ifndef AP_PHIKF_ENABLED
+  #define AP_PHIKF_ENABLED ENABLED
+#endif

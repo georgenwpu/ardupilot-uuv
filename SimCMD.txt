@@ -1,0 +1,1 @@
+sim_vehicle.py --console --map --out 192.168.31.30:14550 -L NWPU -N

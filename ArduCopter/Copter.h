@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#define ALLOW_DOUBLE_MATH_FUNCTIONS
 #include <AP_HAL/AP_HAL.h>
 
 // Common dependencies
@@ -166,6 +167,11 @@
 #if HAL_ADSB_ENABLED
 #include "avoidance_adsb.h"
 #endif
+
+#if AP_PHIKF_ENABLED
+#include <AP_PhiKF/AP_PhiKF.h>
+#endif
+
 // Local modules
 #include "Parameters.h"
 #if USER_PARAMS_ENABLED
@@ -304,6 +310,10 @@ private:
 
 #if AP_RPM_ENABLED
     AP_RPM rpm_sensor;
+#endif
+
+#if AP_PHIKF_ENABLED
+    AP_PhiKF phikf_app;
 #endif
 
     // Inertial Navigation EKF - different viewpoint
@@ -485,6 +495,11 @@ private:
     AC_PosControl *pos_control;
     AC_WPNav *wp_nav;
     AC_Loiter *loiter_nav;
+
+// #ifdef ECKB_NAV
+//     #define KFTS 0.01
+//     px4NavApp px4navapp;
+// #endif
 
 #if AC_CUSTOMCONTROL_MULTI_ENABLED == ENABLED
     AC_CustomControl custom_control{ahrs_view, attitude_control, motors, scheduler.get_loop_period_s()};
@@ -859,6 +874,7 @@ private:
     void Log_Write_Data(LogDataID id, float value);
     void Log_Write_Parameter_Tuning(uint8_t param, float tuning_val, float tune_min, float tune_max);
     void Log_Video_Stabilisation();
+    //void Log_Write_PhiKF_Data(double wx1,double wy,double wz,double fx,double fy,double fz);
 #if FRAME_CONFIG == HELI_FRAME
     void Log_Write_Heli(void);
 #endif

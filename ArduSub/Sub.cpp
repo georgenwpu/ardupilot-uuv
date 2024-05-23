@@ -38,7 +38,8 @@ Sub::Sub()
           loiter_nav(inertial_nav, ahrs_view, pos_control, attitude_control),
           circle_nav(inertial_nav, ahrs_view, pos_control),
           param_loader(var_info),
-          flightmode(&mode_manual)
+          flightmode(&mode_manual),
+          px4navapp(KFTS)
 {
 #if CONFIG_HAL_BOARD != HAL_BOARD_SITL
     failsafe.pilot_input = true;

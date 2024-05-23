@@ -80,8 +80,8 @@ typedef unsigned char BYTE;
 #define sqrt8	2.828427124746190
 
 #define DEG		(PI/180.0)		// arcdeg
-#define MIN		(DEG/60.0)		// arcmin
-#define SEC		(MIN/60.0)		// arcsec
+#define ARCMIN		(DEG/60.0)		// arcmin
+#define SEC		(ARCMIN/60.0)		// arcsec
 #define HUR		3600.0			// hur
 #define SHUR	60.0			// sqrt(hur)
 #define DPS		(DEG/1.0)		// deg/s
@@ -94,7 +94,7 @@ typedef unsigned char BYTE;
 #define UGPG2	(UG/G0/G0)		// ug/g^2
 #define SECPG	(SEC/G0)		// sec/g
 #define RE		6378137.0
-#define FF		(1.0/298.257)
+#define FFF		(1.0/298.257)
 #define PPM		1.0e-6
 
 #ifndef EPS
@@ -150,15 +150,15 @@ typedef unsigned char BYTE;
 #define fINF3			fXXX(INF)
 #define fINF6			fXX6(INF)
 #define fINF9			fXX9(INF)
-#define fPHI(EN,U)		fXXZU(EN,U,MIN)
-#define fMU(X,Y,Z)		fXYZU(X,Y,Z,MIN)
+#define fPHI(EN,U)		fXXZU(EN,U,ARCMIN)
+#define fMU(X,Y,Z)		fXYZU(X,Y,Z,ARCMIN)
 #define fdVEL(X)		fXXX(X)
 #define fdLLH(LL,H)		fXXZ((LL)/RE,(H))
 #define fdPOS(LLH)		fdLLH(LLH,LLH)
 #define fDEG3(X)		fXXX(X*DEG)
 #define fDEGXXZ(X,Z)	fXXZU(X,Z,DEG)
-#define fMIN3(X)		fXXX(X*MIN)
-#define fMINXXZ(X,Z)	fXXZU(X,Z,MIN)
+#define fMIN3(X)		fXXX(X*ARCMIN)
+#define fMINXXZ(X,Z)	fXXZU(X,Z,ARCMIN)
 #define fSEC3(X)		fXXX(X*SEC)
 #define fSECXXZ(X,Z)	fXXZU(X,Z,SEC)
 #define fDPS3(X)		fXXX(X*DPS)
@@ -424,6 +424,7 @@ CVect3 pp2att(const CVect3 &pos1, const CVect3 &pos0);  // position difference t
 CVect3 MKQt(const CVect3 &sR, const CVect3 &tau);// first order Markov white-noise variance calculation
 CVect3 sv2att(const CVect3 &fb, double yaw0=0.0, const CVect3 &fn=I31Z);  // level attitude determination using single-vector
 CVect3 dv2att(const CVect3 &va1, const CVect3 &va2, const CVect3 &vb1, const CVect3 &vb2);  // attitude determination using double-vector
+CVect3 mv2att(int n, const CVect3 *vai, ...);
 CVect3 mv2att(int n, const CVect3 *vai, const CVect3 *vbi, ...);  // attitude determination using multiple-vector
 CVect3 vn2att(const CVect3 &vn);  // trans ENU velocity to attitude (pitch & yaw)
 CVect3 atss(CVect3 &att, CVect3 &vn);  // angles of attack & sideslip
@@ -579,6 +580,7 @@ CVect operator-(const CVect &v);		// minus
 CVect operator~(const CVect &v);		// vector transposition
 CVect abs(const CVect &v);			// vector abs for each element
 double norm(const CVect &v);			// vector norm
+double norm1(const CVect &v);			// vector norm
 double normInf(const CVect &v);		// inf-norm
 CVect pow(const CVect &v, int k=2);	// vector element power
 CVect randn(const CVect &mu, const CVect &sigma=Onen1); // random nx1 vector
@@ -688,7 +690,7 @@ public:
 	CVect3 Xkv[5];
 
 	CPolyfit3(void);
-	virtual void Init(double ts0, int n0=4, double spii=1.0e3);
+	virtual void Init(double ts0, int n0=4, double spii=1.0e3) override;
 	void Update(const CVect3 &Zk, double afa=1.0);
 	CVect3 eval(double t);
 };
@@ -1114,10 +1116,10 @@ public:
 	CSINSGNSS(void);
 	CSINSGNSS(int nq0, int nr0, double ts, int yawHkRow0=6);
 	void Init(const CSINS &sins0, int grade=-1);
-	virtual void SetFt(int nnq);
-	virtual void SetHk(int nnq);
-	virtual void Feedback(int nnq, double fbts);
-	virtual void SetMeas(void) {};
+	virtual void SetFt(int nnq) override;
+	virtual void SetHk(int nnq) override;
+	virtual void Feedback(int nnq, double fbts) override;
+	virtual void SetMeas(void) override {};
 	void SetMeasGNSS(const CVect3 &posgnss=O31, const CVect3 &vngnss=O31, double yawgnss=0.0);
 	void MeasGNSSZvStop(CVect3 &dvnth, double stop=5.0);
 	void MeasGNSSZpStop(CVect3 &dposth, double stop=5.0);
@@ -1140,10 +1142,10 @@ public:
 	CSysClbt(const CVect3 &pos0, double g00=0.0, int ka2pn=1);
 	void Init(double g00=G0);
 	void NextIter(void);
-	virtual void SetFt(int nnq);
-	virtual void SetHk(int nnq) {};
-	virtual void SetMeas(void) {};
-	virtual void Feedback(int nnq, double fbts);
+	virtual void SetFt(int nnq) override;
+	virtual void SetHk(int nnq) override {};
+	virtual void SetMeas(void) override {};
+	virtual void Feedback(int nnq, double fbts) override;
 	int Update(const CVect3 *pwm, const CVect3 *pvm, int nSamples, double ts, int isStatic=-1); 
 #ifdef PSINS_IO_FILE
 	void Log(void);
@@ -1185,9 +1187,9 @@ public:
 	CAligntf(double ts);
 	CAligntf(const CSINS &sins0, double ts);
 	void Init(const CSINS &sins0);
-	virtual void SetFt(int nnq);
-	virtual void SetHk(int nnq);
-	virtual void Feedback(int nnq, double fbts);
+	virtual void SetFt(int nnq) override;
+	virtual void SetHk(int nnq) override;
+	virtual void Feedback(int nnq, double fbts) override;
 	int Update(const CVect3 *pwm, const CVect3 *pvm, int nSamples, double ts, int nSteps=5);
 	void SetMeasVnAtt(const CVect3 &vnMINS=O31, const CVect3 &attMINS=O31);
 #ifdef PSINS_IO_FILE
@@ -1211,7 +1213,7 @@ public:
 	void Init(const CSINS &sins0, int grade=-1);
 	void SetDistance(double dist=0.0);
 	CVect3 ODKappa(const CVect3 &kpp=O31);
-	virtual void SetMeas(void) {};
+	virtual void SetMeas(void) override {};
 	BOOL ODVelUpdate(double dS);
 	int Update(const CVect3 *pwm, const CVect3 *pvm, double dS, int nSamples, double ts, int nSteps=5); 
 #ifdef PSINS_IO_FILE
@@ -1231,10 +1233,10 @@ public:
 	CAutoDrive(void);
 	CAutoDrive(double ts);
 	void Init(const CSINS &sins0, int grade=-1);
-	virtual void SetFt(int nnq);
-	virtual void SetHk(int nnq);
-	virtual void Feedback(int nnq, double fbts);
-	virtual void SetMeas(void) {};
+	virtual void SetFt(int nnq) override;
+	virtual void SetHk(int nnq) override;
+	virtual void Feedback(int nnq, double fbts) override;
+	virtual void SetMeas(void)  override {};
 	void ZUPTtest(void);
 	void ZIHRtest(void);
 	void NHCtest(void);
@@ -1247,9 +1249,9 @@ class CSGOClbt:public CSINSGNSSOD	// SIMU/GNSS/OD Calibration
 public:
 	CSGOClbt(double ts);
 	void Init(const CSINS &sins0, int grade=-1);
-	virtual void SetFt(int nnq);
-	virtual void SetHk(int nnq);
-	virtual void Feedback(int nnq, double fbts);
+	virtual void SetFt(int nnq) override;
+	virtual void SetHk(int nnq) override;
+	virtual void Feedback(int nnq, double fbts) override;
 	int Update(const CVect3 *pwm, const CVect3 *pvm, double dS, int nSamples, double ts, int nSteps=5); 
 };
 
@@ -1259,9 +1261,9 @@ public:
 	CVAutoPOS(void);
 	CVAutoPOS(double ts);
 	virtual void Init(const CSINS &sins0, int grade=-1);
-	virtual void SetFt(int nnq);
-	virtual void SetHk(int nnq);
-	virtual void Feedback(int nnq, double fbts);
+	virtual void SetFt(int nnq) override;
+	virtual void SetHk(int nnq) override;
+	virtual void Feedback(int nnq, double fbts) override;
 	int Update(const CVect3 *pwm, const CVect3 *pvm, double dS, int nn, double ts, int nStep=5);
 };
 
@@ -1297,8 +1299,8 @@ class CGKP
     CVect3 GKPCore(const CVect3 &BL);
     CVect3 IGKPCore(const CVect3 &xy);
 public:
-    CGKP(double a0=RE, double f0=FF);
-    void Init(double a0=RE, double f0=FF);
+    CGKP(double a0=RE, double f0=FFF);
+    void Init(double a0=RE, double f0=FFF);
     CVect3 GKP(const CVect3 &BL);
     CVect3 IGKP(const CVect3 &xy);
 };
@@ -1474,7 +1476,9 @@ void add(CMat3 &res, const CMat3 &m1, const CMat3 &m2);
 void add(CVect &res, const CVect &v1, const CVect &v2);
 void add(CMat &res, const CMat &m1, const CMat &m2);
 void sub(CVect3 &res, const CVect3 &v1, const CVect3 &v2);
+void sub(CVect &res, const CVect &v1, const CVect &v2);
 void sub(CMat3 &res, const CMat3 &m1, const CMat3 &m2);
+void sub(CMat &res, const CMat &m1, const CMat &m2);
 void cros(CVect3 &res, const CVect3 &v1, const CVect3 &v2);
 void dotmul(CVect3 &res, const CVect3 &v1, const CVect3 &v2);
 void dotdiv(CVect3 &res, const CVect3 &v1, const CVect3 &v2);
