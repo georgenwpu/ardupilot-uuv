@@ -62,7 +62,7 @@ void Sub::read_rangefinder()
         }
         rangefinder_state.last_healthy_ms = now;
         rangefinder_state.rangefinder_terrain_offset_cm =
-                sub.rangefinder_state.inertial_alt_cm - sub.rangefinder_state.alt_cm_filt.get();
+                ardusub.rangefinder_state.inertial_alt_cm - ardusub.rangefinder_state.alt_cm_filt.get();
     }
 
     // send rangefinder altitude and health to waypoint navigation library

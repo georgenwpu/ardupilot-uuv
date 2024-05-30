@@ -4,10 +4,10 @@
 bool AP_Arming_Sub::rc_calibration_checks(bool display_failure)
 {
     const RC_Channel *channels[] = {
-        sub.channel_roll,
-        sub.channel_pitch,
-        sub.channel_throttle,
-        sub.channel_yaw
+        ardusub.channel_roll,
+        ardusub.channel_pitch,
+        ardusub.channel_throttle,
+        ardusub.channel_yaw
     };
     return rc_checks_copter_sub(display_failure, channels);
 }
@@ -17,7 +17,7 @@ bool AP_Arming_Sub::has_disarm_function() const {
     // make sure the craft has a disarm button assigned before it is armed
     // check all the standard btn functions
     for (uint8_t i = 0; i < 16; i++) {
-        switch (sub.get_button(i)->function(false)) {
+        switch (ardusub.get_button(i)->function(false)) {
             case JSButton::k_shift :
                 has_shift_function = true;
                 break;
@@ -31,7 +31,7 @@ bool AP_Arming_Sub::has_disarm_function() const {
     // check all the shift functions if there's shift assigned
     if (has_shift_function) {
         for (uint8_t i = 0; i < 16; i++) {
-            switch (sub.get_button(i)->function(true)) {
+            switch (ardusub.get_button(i)->function(true)) {
                 case JSButton::k_arm_toggle :
                 case JSButton::k_disarm :
                     return true;
@@ -97,7 +97,7 @@ bool AP_Arming_Sub::arm(AP_Arming::Method method, bool do_arming_checks)
 #endif
 
     // disable cpu failsafe because initialising everything takes a while
-    sub.mainloop_failsafe_disable();
+    ardusub.mainloop_failsafe_disable();
 
     // notify that arming will occur (we do this early to give plenty of warning)
     AP_Notify::flags.armed = true;
@@ -112,7 +112,7 @@ bool AP_Arming_Sub::arm(AP_Arming::Method method, bool do_arming_checks)
 
     AP_AHRS &ahrs = AP::ahrs();
 
-    sub.initial_armed_bearing = ahrs.yaw_sensor;
+    ardusub.initial_armed_bearing = ahrs.yaw_sensor;
 
     if (!ahrs.home_is_set()) {
         // Reset EKF altitude if home hasn't been set yet (we use EKF altitude as substitute for alt above home)
@@ -122,7 +122,7 @@ bool AP_Arming_Sub::arm(AP_Arming::Method method, bool do_arming_checks)
         // AP::logger().Write_Event(LogEvent::EKF_ALT_RESET);
     } else if (!ahrs.home_is_locked()) {
         // Reset home position if it has already been set before (but not locked)
-        if (!sub.set_home_to_current_location(false)) {
+        if (!ardusub.set_home_to_current_location(false)) {
             // ignore this failure
         }
     }
@@ -130,18 +130,18 @@ bool AP_Arming_Sub::arm(AP_Arming::Method method, bool do_arming_checks)
     hal.util->set_soft_armed(true);
 
     // enable output to motors
-    sub.enable_motor_output();
+    ardusub.enable_motor_output();
 
     // finally actually arm the motors
-    sub.motors.armed(true);
+    ardusub.motors.armed(true);
 
 #if HAL_LOGGING_ENABLED
     // log flight mode in case it was changed while vehicle was disarmed
-    AP::logger().Write_Mode((uint8_t)sub.control_mode, sub.control_mode_reason);
+    AP::logger().Write_Mode((uint8_t)ardusub.control_mode, ardusub.control_mode_reason);
 #endif
 
     // reenable failsafe
-    sub.mainloop_failsafe_enable();
+    ardusub.mainloop_failsafe_enable();
 
     // perf monitor ignores delay due to arming
     AP::scheduler().perf_info.ignore_this_loop();
@@ -156,7 +156,7 @@ bool AP_Arming_Sub::arm(AP_Arming::Method method, bool do_arming_checks)
 bool AP_Arming_Sub::disarm(const AP_Arming::Method method, bool do_disarm_checks)
 {
     // return immediately if we are already disarmed
-    if (!sub.motors.armed()) {
+    if (!ardusub.motors.armed()) {
         return false;
     }
 
@@ -181,10 +181,10 @@ bool AP_Arming_Sub::disarm(const AP_Arming::Method method, bool do_disarm_checks
     }
 
     // send disarm command to motors
-    sub.motors.armed(false);
+    ardusub.motors.armed(false);
 
     // reset the mission
-    sub.mission.reset();
+    ardusub.mission.reset();
 
 #if HAL_LOGGING_ENABLED
     AP::logger().set_vehicle_armed(false);
@@ -193,7 +193,7 @@ bool AP_Arming_Sub::disarm(const AP_Arming::Method method, bool do_disarm_checks
     hal.util->set_soft_armed(false);
 
     // clear input holds
-    sub.clear_input_hold();
+    ardusub.clear_input_hold();
 
     return true;
 }

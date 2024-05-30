@@ -9,7 +9,7 @@
 
 static void failsafe_check_static()
 {
-    sub.mainloop_failsafe_check();
+    ardusub.mainloop_failsafe_check();
 }
 
 void Sub::init_ardupilot()
@@ -143,7 +143,7 @@ void Sub::init_ardupilot()
 
     // initialise AP_Logger library
 #if HAL_LOGGING_ENABLED
-    logger.setVehicle_Startup_Writer(FUNCTOR_BIND(&sub, &Sub::Log_Write_Vehicle_Startup_Messages, void));
+    logger.setVehicle_Startup_Writer(FUNCTOR_BIND(&ardusub, &Sub::Log_Write_Vehicle_Startup_Messages, void));
 #endif
 
     startup_INS_ground();

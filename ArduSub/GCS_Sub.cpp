@@ -4,7 +4,7 @@
 
 uint8_t GCS_Sub::sysid_this_mav() const
 {
-    return sub.g.sysid_this_mav;
+    return ardusub.g.sysid_this_mav;
 }
 
 void GCS_Sub::update_vehicle_sensor_status_flags()
@@ -29,7 +29,7 @@ void GCS_Sub::update_vehicle_sensor_status_flags()
         MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL |
         MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL;
 
-    switch (sub.control_mode) {
+    switch (ardusub.control_mode) {
     case Mode::Number::ALT_HOLD:
     case Mode::Number::AUTO:
     case Mode::Number::GUIDED:
@@ -47,17 +47,17 @@ void GCS_Sub::update_vehicle_sensor_status_flags()
 
     // override the parent class's values for ABSOLUTE_PRESSURE to
     // only check internal barometer:
-    if (sub.ap.depth_sensor_present) {
+    if (ardusub.ap.depth_sensor_present) {
         control_sensors_present |= MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE;
         control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE;
     }
     control_sensors_health &= ~MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE; // check the internal barometer only
-    if (sub.sensor_health.depth) {
+    if (ardusub.sensor_health.depth) {
         control_sensors_health |= MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE;
     }
 
 #if AP_TERRAIN_AVAILABLE
-    switch (sub.terrain.status()) {
+    switch (ardusub.terrain.status()) {
     case AP_Terrain::TerrainStatusDisabled:
         break;
     case AP_Terrain::TerrainStatusUnhealthy:
@@ -75,7 +75,7 @@ void GCS_Sub::update_vehicle_sensor_status_flags()
 
 #if RANGEFINDER_ENABLED == ENABLED
     const RangeFinder *rangefinder = RangeFinder::get_singleton();
-    if (sub.rangefinder_state.enabled) {
+    if (ardusub.rangefinder_state.enabled) {
         control_sensors_present |= MAV_SYS_STATUS_SENSOR_LASER_POSITION;
         control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_LASER_POSITION;
         if (rangefinder && rangefinder->has_data_orient(ROTATION_PITCH_270)) {

@@ -1,6 +1,6 @@
 #pragma once
 
-#define AP_PARAM_VEHICLE_NAME sub
+#define AP_PARAM_VEHICLE_NAME ardusub
 
 #include <AP_Common/AP_Common.h>
 

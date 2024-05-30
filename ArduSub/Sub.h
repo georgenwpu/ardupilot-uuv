@@ -12,7 +12,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
+#ifndef _SUB_H
+#define _SUB_H
 /*
   This is the main Sub class
  */
@@ -25,8 +26,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include <AP_HAL/AP_HAL.h>
-
 // Common dependencies
 #include <AP_Common/AP_Common.h>
 #include <AP_Common/Location.h>
@@ -37,6 +36,7 @@
 #include <AP_Declination/AP_Declination.h>     // ArduPilot Mega Declination Helper Library
 
 // Application dependencies
+
 #include <AP_GPS/AP_GPS.h>             // ArduPilot GPS library
 #include <AP_Logger/AP_Logger.h>          // ArduPilot Mega Flash Memory Library
 #include <AP_Baro/AP_Baro.h>
@@ -52,7 +52,6 @@
 #include <AP_Mount/AP_Mount.h>           // Camera/Antenna mount
 #include <AP_Vehicle/AP_Vehicle.h>         // needed for AHRS build
 #include <AP_InertialNav/AP_InertialNav.h>     // inertial navigation library
-#include <SUB_Navigation/px4NavApp.h>       // PX4NavApp
 #include <AC_WPNav/AC_WPNav.h>           // Waypoint navigation library
 #include <AC_WPNav/AC_Loiter.h>
 #include <AC_WPNav/AC_Circle.h>          // circle navigation library
@@ -64,6 +63,7 @@
 #include <AP_LeakDetector/AP_LeakDetector.h> // Leak detector
 #include <AP_Proximity/AP_Proximity.h>
 #include <AP_Rally/AP_Rally.h>
+#include <AP_HAL/AP_HAL.h>
 
 // Local modules
 #include "defines.h"
@@ -99,6 +99,8 @@
 #include <AP_Scripting/AP_Scripting.h>
 #endif
 
+#include <AP_PhiKF/AP_PhiKF.h>
+
 class Sub : public AP_Vehicle {
 public:
     friend class GCS_MAVLINK_Sub;
@@ -119,6 +121,8 @@ public:
     friend class ModeCircle;
     friend class ModeSurface;
     friend class ModeMotordetect;
+    friend class ModeStandmov;
+    friend class AP_PhiKF;
 
     Sub(void);
 
@@ -322,13 +326,8 @@ private:
 
     // Inertial Navigation
     AP_InertialNav inertial_nav;
-    AP_AHRS_View ahrs_view;
 
-    // Sub_Nav_PhiKF
-#ifdef ECKB_NAV
-    px4NavApp px4navapp;
-    #define KFTS 0.01
-#endif
+    AP_AHRS_View ahrs_view;
 
     // Attitude, Position and Waypoint navigation objects
     // To-Do: move inertial nav up or other navigation variables down here
@@ -364,6 +363,9 @@ private:
     AP_Terrain terrain;
 #endif
 
+    // phikfapp defintion
+    AP_PhiKF phikf_app;
+
     // used to allow attitude and depth control without a position system
     struct attitude_no_gps_struct {
         uint32_t last_message_ms;
@@ -384,6 +386,8 @@ private:
     static const AP_Param::Info var_info[];
     static const struct LogStructure log_structure[];
 
+    // phiKF
+    void phiKF_update();
     void run_rate_controller();
     void fifty_hz_loop();
     void update_batt_compass(void);
@@ -594,6 +598,7 @@ private:
     ModeSurface mode_surface;
     ModeMotordetect mode_motordetect;
     ModeSurftrak mode_surftrak;
+    ModeStandmov mode_standmov;
 
     // Auto
     AutoSubMode auto_mode;   // controls which auto controller is run
@@ -628,4 +633,6 @@ public:
 };
 
 extern const AP_HAL::HAL& hal;
-extern Sub sub;
+extern Sub ardusub;
+
+#endif

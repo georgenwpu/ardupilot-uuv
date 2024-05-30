@@ -31,7 +31,7 @@ struct Guided_Limit {
 // guided_init - initialise guided controller
 bool ModeGuided::init(bool ignore_checks)
 {
-    if (!sub.position_ok() && !ignore_checks) {
+    if (!ardusub.position_ok() && !ignore_checks) {
         return false;
     }
 
@@ -78,19 +78,19 @@ autopilot_yaw_mode ModeGuided::get_default_auto_yaw_mode(bool rtl) const
 void ModeGuided::guided_pos_control_start()
 {
     // set to position control mode
-    sub.guided_mode = Guided_WP;
+    ardusub.guided_mode = Guided_WP;
 
     // initialise waypoint controller
-    sub.wp_nav.wp_and_spline_init();
+    ardusub.wp_nav.wp_and_spline_init();
 
     // initialise wpnav to stopping point at current altitude
     // To-Do: set to current location if disarmed?
     // To-Do: set to stopping point altitude?
     Vector3f stopping_point;
-    sub.wp_nav.get_wp_stopping_point(stopping_point);
+    ardusub.wp_nav.get_wp_stopping_point(stopping_point);
 
     // no need to check return status because terrain data is not used
-    sub.wp_nav.set_wp_destination(stopping_point, false);
+    ardusub.wp_nav.set_wp_destination(stopping_point, false);
 
     // initialise yaw
     set_auto_yaw_mode(get_default_auto_yaw_mode(false));
@@ -100,11 +100,11 @@ void ModeGuided::guided_pos_control_start()
 void ModeGuided::guided_vel_control_start()
 {
     // set guided_mode to velocity controller
-    sub.guided_mode = Guided_Velocity;
+    ardusub.guided_mode = Guided_Velocity;
 
     // initialize vertical maximum speeds and acceleration
-    position_control->set_max_speed_accel_z(-sub.get_pilot_speed_dn(), g.pilot_speed_up, g.pilot_accel_z);
-    position_control->set_correction_speed_accel_z(-sub.get_pilot_speed_dn(), g.pilot_speed_up, g.pilot_accel_z);
+    position_control->set_max_speed_accel_z(-ardusub.get_pilot_speed_dn(), g.pilot_speed_up, g.pilot_accel_z);
+    position_control->set_correction_speed_accel_z(-ardusub.get_pilot_speed_dn(), g.pilot_speed_up, g.pilot_accel_z);
 
     // initialise velocity controller
     position_control->init_z_controller();
@@ -118,11 +118,11 @@ void ModeGuided::guided_vel_control_start()
 void ModeGuided::guided_posvel_control_start()
 {
     // set guided_mode to velocity controller
-    sub.guided_mode = Guided_PosVel;
+    ardusub.guided_mode = Guided_PosVel;
 
     // set vertical speed and acceleration
-    position_control->set_max_speed_accel_z(sub.wp_nav.get_default_speed_down(), sub.wp_nav.get_default_speed_up(), sub.wp_nav.get_accel_z());
-    position_control->set_correction_speed_accel_z(sub.wp_nav.get_default_speed_down(), sub.wp_nav.get_default_speed_up(), sub.wp_nav.get_accel_z());
+    position_control->set_max_speed_accel_z(ardusub.wp_nav.get_default_speed_down(), ardusub.wp_nav.get_default_speed_up(), ardusub.wp_nav.get_accel_z());
+    position_control->set_correction_speed_accel_z(ardusub.wp_nav.get_default_speed_down(), ardusub.wp_nav.get_default_speed_up(), ardusub.wp_nav.get_accel_z());
 
     // initialise velocity controller
     position_control->init_z_controller();
@@ -136,11 +136,11 @@ void ModeGuided::guided_posvel_control_start()
 void ModeGuided::guided_angle_control_start()
 {
     // set guided_mode to velocity controller
-    sub.guided_mode = Guided_Angle;
+    ardusub.guided_mode = Guided_Angle;
 
     // set vertical speed and acceleration
-    position_control->set_max_speed_accel_z(sub.wp_nav.get_default_speed_down(), sub.wp_nav.get_default_speed_up(), sub.wp_nav.get_accel_z());
-    position_control->set_correction_speed_accel_z(sub.wp_nav.get_default_speed_down(), sub.wp_nav.get_default_speed_up(), sub.wp_nav.get_accel_z());
+    position_control->set_max_speed_accel_z(ardusub.wp_nav.get_default_speed_down(), ardusub.wp_nav.get_default_speed_up(), ardusub.wp_nav.get_accel_z());
+    position_control->set_correction_speed_accel_z(ardusub.wp_nav.get_default_speed_down(), ardusub.wp_nav.get_default_speed_up(), ardusub.wp_nav.get_accel_z());
 
     // initialise velocity controller
     position_control->init_z_controller();
@@ -162,14 +162,14 @@ void ModeGuided::guided_angle_control_start()
 bool ModeGuided::guided_set_destination(const Vector3f& destination)
 {
     // ensure we are in position control mode
-    if (sub.guided_mode != Guided_WP) {
+    if (ardusub.guided_mode != Guided_WP) {
         guided_pos_control_start();
     }
 
 #if AP_FENCE_ENABLED
     // reject destination if outside the fence
     const Location dest_loc(destination, Location::AltFrame::ABOVE_ORIGIN);
-    if (!sub.fence.check_destination_within_fence(dest_loc)) {
+    if (!ardusub.fence.check_destination_within_fence(dest_loc)) {
         LOGGER_WRITE_ERROR(LogErrorSubsystem::NAVIGATION, LogErrorCode::DEST_OUTSIDE_FENCE);
         // failure is propagated to GCS with NAK
         return false;
@@ -177,11 +177,11 @@ bool ModeGuided::guided_set_destination(const Vector3f& destination)
 #endif
 
     // no need to check return status because terrain data is not used
-    sub.wp_nav.set_wp_destination(destination, false);
+    ardusub.wp_nav.set_wp_destination(destination, false);
 
 #if HAL_LOGGING_ENABLED
     // log target
-    sub.Log_Write_GuidedTarget(sub.guided_mode, destination, Vector3f());
+    ardusub.Log_Write_GuidedTarget(ardusub.guided_mode, destination, Vector3f());
 #endif
 
     return true;
@@ -193,21 +193,21 @@ bool ModeGuided::guided_set_destination(const Vector3f& destination)
 bool ModeGuided::guided_set_destination(const Location& dest_loc)
 {
     // ensure we are in position control mode
-    if (sub.guided_mode != Guided_WP) {
+    if (ardusub.guided_mode != Guided_WP) {
         guided_pos_control_start();
     }
 
 #if AP_FENCE_ENABLED
     // reject destination outside the fence.
     // Note: there is a danger that a target specified as a terrain altitude might not be checked if the conversion to alt-above-home fails
-    if (!sub.fence.check_destination_within_fence(dest_loc)) {
+    if (!ardusub.fence.check_destination_within_fence(dest_loc)) {
         LOGGER_WRITE_ERROR(LogErrorSubsystem::NAVIGATION, LogErrorCode::DEST_OUTSIDE_FENCE);
         // failure is propagated to GCS with NAK
         return false;
     }
 #endif
 
-    if (!sub.wp_nav.set_wp_destination_loc(dest_loc)) {
+    if (!ardusub.wp_nav.set_wp_destination_loc(dest_loc)) {
         // failure to set destination can only be because of missing terrain data
         LOGGER_WRITE_ERROR(LogErrorSubsystem::NAVIGATION, LogErrorCode::FAILED_TO_SET_DESTINATION);
         // failure is propagated to GCS with NAK
@@ -216,7 +216,7 @@ bool ModeGuided::guided_set_destination(const Location& dest_loc)
 
 #if HAL_LOGGING_ENABLED
     // log target
-    sub.Log_Write_GuidedTarget(sub.guided_mode, Vector3f(dest_loc.lat, dest_loc.lng, dest_loc.alt),Vector3f());
+    ardusub.Log_Write_GuidedTarget(ardusub.guided_mode, Vector3f(dest_loc.lat, dest_loc.lng, dest_loc.alt),Vector3f());
 #endif
 
     return true;
@@ -228,14 +228,14 @@ bool ModeGuided::guided_set_destination(const Location& dest_loc)
 bool ModeGuided::guided_set_destination(const Vector3f& destination, bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_yaw)
 {
     // ensure we are in position control mode
-    if (sub.guided_mode != Guided_WP) {
+    if (ardusub.guided_mode != Guided_WP) {
         guided_pos_control_start();
     }
 
 #if AP_FENCE_ENABLED
     // reject destination if outside the fence
     const Location dest_loc(destination, Location::AltFrame::ABOVE_ORIGIN);
-    if (!sub.fence.check_destination_within_fence(dest_loc)) {
+    if (!ardusub.fence.check_destination_within_fence(dest_loc)) {
         LOGGER_WRITE_ERROR(LogErrorSubsystem::NAVIGATION, LogErrorCode::DEST_OUTSIDE_FENCE);
         // failure is propagated to GCS with NAK
         return false;
@@ -248,11 +248,11 @@ bool ModeGuided::guided_set_destination(const Vector3f& destination, bool use_ya
     update_time_ms = AP_HAL::millis();
 
     // no need to check return status because terrain data is not used
-    sub.wp_nav.set_wp_destination(destination, false);
+    ardusub.wp_nav.set_wp_destination(destination, false);
 
 #if HAL_LOGGING_ENABLED
     // log target
-    sub.Log_Write_GuidedTarget(sub.guided_mode, destination, Vector3f());
+    ardusub.Log_Write_GuidedTarget(ardusub.guided_mode, destination, Vector3f());
 #endif
 
     return true;
@@ -262,7 +262,7 @@ bool ModeGuided::guided_set_destination(const Vector3f& destination, bool use_ya
 void ModeGuided::guided_set_velocity(const Vector3f& velocity)
 {
     // check we are in velocity control mode
-    if (sub.guided_mode != Guided_Velocity) {
+    if (ardusub.guided_mode != Guided_Velocity) {
         guided_vel_control_start();
     }
 
@@ -276,7 +276,7 @@ void ModeGuided::guided_set_velocity(const Vector3f& velocity)
 void ModeGuided::guided_set_velocity(const Vector3f& velocity, bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_yaw)
 {
    // check we are in velocity control mode
-    if (sub.guided_mode != Guided_Velocity) {
+    if (ardusub.guided_mode != Guided_Velocity) {
         guided_vel_control_start();
     }
 
@@ -294,14 +294,14 @@ void ModeGuided::guided_set_velocity(const Vector3f& velocity, bool use_yaw, flo
 bool ModeGuided::guided_set_destination_posvel(const Vector3f& destination, const Vector3f& velocity)
 {
     // check we are in velocity control mode
-    if (sub.guided_mode != Guided_PosVel) {
+    if (ardusub.guided_mode != Guided_PosVel) {
         guided_posvel_control_start();
     }
 
 #if AP_FENCE_ENABLED
     // reject destination if outside the fence
     const Location dest_loc(destination, Location::AltFrame::ABOVE_ORIGIN);
-    if (!sub.fence.check_destination_within_fence(dest_loc)) {
+    if (!ardusub.fence.check_destination_within_fence(dest_loc)) {
         LOGGER_WRITE_ERROR(LogErrorSubsystem::NAVIGATION, LogErrorCode::DEST_OUTSIDE_FENCE);
         // failure is propagated to GCS with NAK
         return false;
@@ -319,7 +319,7 @@ bool ModeGuided::guided_set_destination_posvel(const Vector3f& destination, cons
 
 #if HAL_LOGGING_ENABLED
     // log target
-    sub.Log_Write_GuidedTarget(sub.guided_mode, destination, velocity);
+    ardusub.Log_Write_GuidedTarget(ardusub.guided_mode, destination, velocity);
 #endif
 
     return true;
@@ -329,14 +329,14 @@ bool ModeGuided::guided_set_destination_posvel(const Vector3f& destination, cons
 bool ModeGuided::guided_set_destination_posvel(const Vector3f& destination, const Vector3f& velocity, bool use_yaw, float yaw_cd, bool use_yaw_rate, float yaw_rate_cds, bool relative_yaw)
 {
     // check we are in velocity control mode
-    if (sub.guided_mode != Guided_PosVel) {
+    if (ardusub.guided_mode != Guided_PosVel) {
         guided_posvel_control_start();
     }
 
     #if AP_FENCE_ENABLED
     // reject destination if outside the fence
     const Location dest_loc(destination, Location::AltFrame::ABOVE_ORIGIN);
-    if (!sub.fence.check_destination_within_fence(dest_loc)) {
+    if (!ardusub.fence.check_destination_within_fence(dest_loc)) {
         LOGGER_WRITE_ERROR(LogErrorSubsystem::NAVIGATION, LogErrorCode::DEST_OUTSIDE_FENCE);
         // failure is propagated to GCS with NAK
         return false;
@@ -358,7 +358,7 @@ bool ModeGuided::guided_set_destination_posvel(const Vector3f& destination, cons
 
 #if HAL_LOGGING_ENABLED
     // log target
-    sub.Log_Write_GuidedTarget(sub.guided_mode, destination, velocity);
+    ardusub.Log_Write_GuidedTarget(ardusub.guided_mode, destination, velocity);
 #endif
 
     return true;
@@ -368,7 +368,7 @@ bool ModeGuided::guided_set_destination_posvel(const Vector3f& destination, cons
 void ModeGuided::guided_set_angle(const Quaternion &q, float climb_rate_cms)
 {
     // check we are in velocity control mode
-    if (sub.guided_mode != Guided_Angle) {
+    if (ardusub.guided_mode != Guided_Angle) {
         guided_angle_control_start();
     }
 
@@ -406,16 +406,16 @@ void ModeGuided::guided_set_yaw_state(bool use_yaw, float yaw_cd, bool use_yaw_r
     case 4: hold current yaw
     */
     if (use_yaw && !use_yaw_rate) {
-        sub.yaw_rate_only = false;
-        sub.mode_auto.set_auto_yaw_look_at_heading(yaw_cd * 0.01f, 0.0f, direction, relative_angle);
+        ardusub.yaw_rate_only = false;
+        ardusub.mode_auto.set_auto_yaw_look_at_heading(yaw_cd * 0.01f, 0.0f, direction, relative_angle);
     } else if (use_yaw && use_yaw_rate) { 
-        sub.yaw_rate_only = false;
-        sub.mode_auto.set_auto_yaw_look_at_heading(yaw_cd * 0.01f, yaw_rate_cds * 0.01f, direction, relative_angle);
+        ardusub.yaw_rate_only = false;
+        ardusub.mode_auto.set_auto_yaw_look_at_heading(yaw_cd * 0.01f, yaw_rate_cds * 0.01f, direction, relative_angle);
     } else if (!use_yaw && use_yaw_rate) {
-        sub.yaw_rate_only = true;
-        sub.mode_auto.set_yaw_rate(yaw_rate_cds * 0.01f);
+        ardusub.yaw_rate_only = true;
+        ardusub.mode_auto.set_yaw_rate(yaw_rate_cds * 0.01f);
     } else{
-        sub.yaw_rate_only = false;
+        ardusub.yaw_rate_only = false;
         set_auto_yaw_mode(AUTO_YAW_HOLD);
     }
 }
@@ -425,7 +425,7 @@ void ModeGuided::guided_set_yaw_state(bool use_yaw, float yaw_cd, bool use_yaw_r
 void ModeGuided::run()
 {
     // call the correct auto controller
-    switch (sub.guided_mode) {
+    switch (ardusub.guided_mode) {
 
     case Guided_WP:
         // run position controller
@@ -459,19 +459,19 @@ void ModeGuided::guided_pos_control_run()
         // Sub vehicles do not stabilize roll/pitch/yaw when disarmed
         attitude_control->set_throttle_out(0,true,g.throttle_filt);
         attitude_control->relax_attitude_controllers();
-        sub.wp_nav.wp_and_spline_init();
+        ardusub.wp_nav.wp_and_spline_init();
         return;
     }
 
     // process pilot's yaw input
     float target_yaw_rate = 0;
-    if (!sub.failsafe.pilot_input) {
+    if (!ardusub.failsafe.pilot_input) {
         // get pilot's desired yaw rate
-        target_yaw_rate = sub.get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+        target_yaw_rate = ardusub.get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
         if (!is_zero(target_yaw_rate)) {
             set_auto_yaw_mode(AUTO_YAW_HOLD);
         } else{
-            if (sub.yaw_rate_only){
+            if (ardusub.yaw_rate_only){
                 set_auto_yaw_mode(AUTO_YAW_RATE);
             } else{
                 set_auto_yaw_mode(AUTO_YAW_LOOK_AT_HEADING);
@@ -483,10 +483,10 @@ void ModeGuided::guided_pos_control_run()
     motors.set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
 
     // run waypoint controller
-    sub.failsafe_terrain_set_status(sub.wp_nav.update_wpnav());
+    ardusub.failsafe_terrain_set_status(ardusub.wp_nav.update_wpnav());
 
     float lateral_out, forward_out;
-    sub.translate_wpnav_rp(lateral_out, forward_out);
+    ardusub.translate_wpnav_rp(lateral_out, forward_out);
 
     // Send to forward/lateral outputs
     motors.set_lateral(lateral_out);
@@ -497,16 +497,16 @@ void ModeGuided::guided_pos_control_run()
     position_control->update_z_controller();
 
     // call attitude controller
-    if (sub.auto_yaw_mode == AUTO_YAW_HOLD) {
+    if (ardusub.auto_yaw_mode == AUTO_YAW_HOLD) {
         // roll & pitch & yaw rate from pilot
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(channel_roll->get_control_in(), channel_pitch->get_control_in(), target_yaw_rate);
-    } else if (sub.auto_yaw_mode == AUTO_YAW_LOOK_AT_HEADING) {
+    } else if (ardusub.auto_yaw_mode == AUTO_YAW_LOOK_AT_HEADING) {
         // roll, pitch from pilot, yaw & yaw_rate from auto_control
-        target_yaw_rate = sub.yaw_look_at_heading_slew * 100.0;
+        target_yaw_rate = ardusub.yaw_look_at_heading_slew * 100.0;
         attitude_control->input_euler_angle_roll_pitch_slew_yaw(channel_roll->get_control_in(), channel_pitch->get_control_in(), get_auto_heading(), target_yaw_rate);
-    } else if (sub.auto_yaw_mode == AUTO_YAW_RATE) {
+    } else if (ardusub.auto_yaw_mode == AUTO_YAW_RATE) {
         // roll, pitch from pilot, yaw_rate from auto_control
-        target_yaw_rate = sub.yaw_look_at_heading_slew * 100.0;
+        target_yaw_rate = ardusub.yaw_look_at_heading_slew * 100.0;
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(channel_roll->get_control_in(), channel_pitch->get_control_in(), target_yaw_rate);
     } else {
         // roll, pitch from pilot, yaw heading from auto_heading()
@@ -532,13 +532,13 @@ void ModeGuided::guided_vel_control_run()
 
     // process pilot's yaw input
     float target_yaw_rate = 0;
-    if (!sub.failsafe.pilot_input) {
+    if (!ardusub.failsafe.pilot_input) {
         // get pilot's desired yaw rate
-        target_yaw_rate = sub.get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+        target_yaw_rate = ardusub.get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
         if (!is_zero(target_yaw_rate)) {
             set_auto_yaw_mode(AUTO_YAW_HOLD);
         } else{
-            if (sub.yaw_rate_only){
+            if (ardusub.yaw_rate_only){
                 set_auto_yaw_mode(AUTO_YAW_RATE);
             } else{
                 set_auto_yaw_mode(AUTO_YAW_LOOK_AT_HEADING);
@@ -563,23 +563,23 @@ void ModeGuided::guided_vel_control_run()
     position_control->update_z_controller();
 
     float lateral_out, forward_out;
-    sub.translate_pos_control_rp(lateral_out, forward_out);
+    ardusub.translate_pos_control_rp(lateral_out, forward_out);
 
     // Send to forward/lateral outputs
     motors.set_lateral(lateral_out);
     motors.set_forward(forward_out);
 
     // call attitude controller
-    if (sub.auto_yaw_mode == AUTO_YAW_HOLD) {
+    if (ardusub.auto_yaw_mode == AUTO_YAW_HOLD) {
         // roll & pitch & yaw rate from pilot
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(channel_roll->get_control_in(), channel_pitch->get_control_in(), target_yaw_rate);
-    } else if (sub.auto_yaw_mode == AUTO_YAW_LOOK_AT_HEADING) {
+    } else if (ardusub.auto_yaw_mode == AUTO_YAW_LOOK_AT_HEADING) {
         // roll, pitch from pilot, yaw & yaw_rate from auto_control
-        target_yaw_rate = sub.yaw_look_at_heading_slew * 100.0;
+        target_yaw_rate = ardusub.yaw_look_at_heading_slew * 100.0;
         attitude_control->input_euler_angle_roll_pitch_slew_yaw(channel_roll->get_control_in(), channel_pitch->get_control_in(), get_auto_heading(), target_yaw_rate);
-    } else if (sub.auto_yaw_mode == AUTO_YAW_RATE) {
+    } else if (ardusub.auto_yaw_mode == AUTO_YAW_RATE) {
         // roll, pitch from pilot, yaw_rate from auto_control
-        target_yaw_rate = sub.yaw_look_at_heading_slew * 100.0;
+        target_yaw_rate = ardusub.yaw_look_at_heading_slew * 100.0;
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(channel_roll->get_control_in(), channel_pitch->get_control_in(), target_yaw_rate);
     } else {
         // roll, pitch from pilot, yaw heading from auto_heading()
@@ -606,13 +606,13 @@ void ModeGuided::guided_posvel_control_run()
     // process pilot's yaw input
     float target_yaw_rate = 0;
 
-    if (!sub.failsafe.pilot_input) {
+    if (!ardusub.failsafe.pilot_input) {
         // get pilot's desired yaw rate
-        target_yaw_rate = sub.get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+        target_yaw_rate = ardusub.get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
         if (!is_zero(target_yaw_rate)) {
             set_auto_yaw_mode(AUTO_YAW_HOLD);
         } else{
-            if (sub.yaw_rate_only){
+            if (ardusub.yaw_rate_only){
                 set_auto_yaw_mode(AUTO_YAW_RATE);
             } else{
                 set_auto_yaw_mode(AUTO_YAW_LOOK_AT_HEADING);
@@ -643,23 +643,23 @@ void ModeGuided::guided_posvel_control_run()
     position_control->update_z_controller();
 
     float lateral_out, forward_out;
-    sub.translate_pos_control_rp(lateral_out, forward_out);
+    ardusub.translate_pos_control_rp(lateral_out, forward_out);
 
     // Send to forward/lateral outputs
     motors.set_lateral(lateral_out);
     motors.set_forward(forward_out);
 
     // call attitude controller
-    if (sub.auto_yaw_mode == AUTO_YAW_HOLD) {
+    if (ardusub.auto_yaw_mode == AUTO_YAW_HOLD) {
         // roll & pitch & yaw rate from pilot
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(channel_roll->get_control_in(), channel_pitch->get_control_in(), target_yaw_rate);
-    } else if (sub.auto_yaw_mode == AUTO_YAW_LOOK_AT_HEADING) {
+    } else if (ardusub.auto_yaw_mode == AUTO_YAW_LOOK_AT_HEADING) {
         // roll, pitch from pilot, yaw & yaw_rate from auto_control
-        target_yaw_rate = sub.yaw_look_at_heading_slew * 100.0;
+        target_yaw_rate = ardusub.yaw_look_at_heading_slew * 100.0;
         attitude_control->input_euler_angle_roll_pitch_slew_yaw(channel_roll->get_control_in(), channel_pitch->get_control_in(), get_auto_heading(), target_yaw_rate);
-    } else if (sub.auto_yaw_mode == AUTO_YAW_RATE) {
+    } else if (ardusub.auto_yaw_mode == AUTO_YAW_RATE) {
         // roll, pitch from pilot, and yaw_rate from auto_control
-        target_yaw_rate = sub.yaw_look_at_heading_slew * 100.0;
+        target_yaw_rate = ardusub.yaw_look_at_heading_slew * 100.0;
         attitude_control->input_euler_angle_roll_pitch_euler_rate_yaw(channel_roll->get_control_in(), channel_pitch->get_control_in(), target_yaw_rate);
     } else {
         // roll, pitch from pilot, yaw heading from auto_heading()
@@ -686,7 +686,7 @@ void ModeGuided::guided_angle_control_run()
     float roll_in = guided_angle_state.roll_cd;
     float pitch_in = guided_angle_state.pitch_cd;
     float total_in = norm(roll_in, pitch_in);
-    float angle_max = MIN(attitude_control->get_althold_lean_angle_max_cd(), sub.aparm.angle_max);
+    float angle_max = MIN(attitude_control->get_althold_lean_angle_max_cd(), ardusub.aparm.angle_max);
     if (total_in > angle_max) {
         float ratio = angle_max / total_in;
         roll_in *= ratio;
@@ -697,7 +697,7 @@ void ModeGuided::guided_angle_control_run()
     float yaw_in = wrap_180_cd(guided_angle_state.yaw_cd);
 
     // constrain climb rate
-    float climb_rate_cms = constrain_float(guided_angle_state.climb_rate_cms, -sub.wp_nav.get_default_speed_down(), sub.wp_nav.get_default_speed_up());
+    float climb_rate_cms = constrain_float(guided_angle_state.climb_rate_cms, -ardusub.wp_nav.get_default_speed_down(), ardusub.wp_nav.get_default_speed_up());
 
     // check for timeout - set lean angles and climb rate to zero if no updates received for 3 seconds
     uint32_t tnow = AP_HAL::millis();
@@ -734,13 +734,13 @@ void ModeGuided::guided_limit_clear()
 void ModeGuided::set_auto_yaw_mode(autopilot_yaw_mode yaw_mode)
 {
     // return immediately if no change
-    if (sub.auto_yaw_mode == yaw_mode) {
+    if (ardusub.auto_yaw_mode == yaw_mode) {
         return;
     }
-    sub.auto_yaw_mode = yaw_mode;
+    ardusub.auto_yaw_mode = yaw_mode;
 
     // perform initialisation
-    switch (sub.auto_yaw_mode) {
+    switch (ardusub.auto_yaw_mode) {
     
     case AUTO_YAW_HOLD:
         // pilot controls the heading
@@ -752,7 +752,7 @@ void ModeGuided::set_auto_yaw_mode(autopilot_yaw_mode yaw_mode)
 
     case AUTO_YAW_ROI:
         // point towards a location held in yaw_look_at_WP
-        sub.yaw_look_at_WP_bearing = ahrs.yaw_sensor;
+        ardusub.yaw_look_at_WP_bearing = ahrs.yaw_sensor;
         break;
 
     case AUTO_YAW_LOOK_AT_HEADING:
@@ -762,7 +762,7 @@ void ModeGuided::set_auto_yaw_mode(autopilot_yaw_mode yaw_mode)
 
     case AUTO_YAW_LOOK_AHEAD:
         // Commanded Yaw to automatically look ahead.
-        sub.yaw_look_ahead_bearing = ahrs.yaw_sensor;
+        ardusub.yaw_look_ahead_bearing = ahrs.yaw_sensor;
         break;
 
     case AUTO_YAW_RESETTOARMEDYAW:
@@ -779,32 +779,32 @@ void ModeGuided::set_auto_yaw_mode(autopilot_yaw_mode yaw_mode)
 // 100hz update rate
 float ModeGuided::get_auto_heading()
 {
-    switch (sub.auto_yaw_mode) {
+    switch (ardusub.auto_yaw_mode) {
 
     case AUTO_YAW_ROI:
         // point towards a location held in roi_WP
-        return sub.get_roi_yaw();
+        return ardusub.get_roi_yaw();
         break;
 
     case AUTO_YAW_LOOK_AT_HEADING:
         // keep heading pointing in the direction held in yaw_look_at_heading with no pilot input allowed
-        return sub.yaw_look_at_heading;
+        return ardusub.yaw_look_at_heading;
         break;
 
     case AUTO_YAW_LOOK_AHEAD:
         // Commanded Yaw to automatically look ahead.
-        return sub.get_look_ahead_yaw();
+        return ardusub.get_look_ahead_yaw();
         break;
 
     case AUTO_YAW_RESETTOARMEDYAW:
         // changes yaw to be same as when quad was armed
-        return sub.initial_armed_bearing;
+        return ardusub.initial_armed_bearing;
         break;
 
     case AUTO_YAW_CORRECT_XTRACK: {
         // TODO return current yaw if not in appropriate mode
         // Bearing of current track (centidegrees)
-        float track_bearing = get_bearing_cd(sub.wp_nav.get_wp_origin().xy(), sub.wp_nav.get_wp_destination().xy());
+        float track_bearing = get_bearing_cd(ardusub.wp_nav.get_wp_origin().xy(), ardusub.wp_nav.get_wp_destination().xy());
 
         // Bearing from current position towards intermediate position target (centidegrees)
         const Vector2f target_vel_xy{position_control->get_vel_target_cms().x, position_control->get_vel_target_cms().y};
@@ -822,7 +822,7 @@ float ModeGuided::get_auto_heading()
     default:
         // point towards next waypoint.
         // we don't use wp_bearing because we don't want the vehicle to turn too much during flight
-        return sub.wp_nav.get_yaw();
+        return ardusub.wp_nav.get_yaw();
         break;
     }
 }

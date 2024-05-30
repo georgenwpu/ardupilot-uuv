@@ -157,6 +157,11 @@ const AP_Scheduler::Task Copter::scheduler_tasks[] = {
     SCHED_TASK(fence_check,           25,    100,  7),
 #endif
     SCHED_TASK_CLASS(AP_GPS,               &copter.gps,                 update,          50, 200,   9),
+
+#if AP_PHIKF_ENABLED
+    SCHED_TASK(phiKF_update,              100,    50,  10),
+#endif
+    
 #if AP_OPTICALFLOW_ENABLED
     SCHED_TASK_CLASS(AP_OpticalFlow,          &copter.optflow,             update,         200, 160,  12),
 #endif
@@ -760,13 +765,19 @@ void Copter::update_super_simple_bearing(bool force_update)
 
 void Copter::read_AHRS(void)
 {
-    const auto &_ins = AP::ins();
-    const auto &_compass = AP::compass();
-    Vector3f delta_angle, delta_velocity, omg, fsf, mag;
-    float dangle_dt, magnorm;
-
     // we tell AHRS to skip INS update as we have already done it in FAST_TASK.
     ahrs.update(true);
+}
+
+
+void Copter::phiKF_update()
+{
+    const auto &_ins = AP::ins();
+    const auto &_compass = AP::compass();
+    const auto &_gps = AP::gps();
+    Vector3f delta_angle, delta_velocity, omg, fsf, mag;
+    float dangle_dt, magnorm;
+    Location gps_loc;
 
     // Adding PhiKF processing
     _ins.get_delta_angle(delta_angle, dangle_dt);
@@ -781,9 +792,17 @@ void Copter::read_AHRS(void)
     
     phikf_app.setIMU(omg.x, omg.y, omg.z, fsf.x, fsf.y, fsf.z);
     phikf_app.setMag(mag.x, mag.y, mag.z);
+
+    if (_gps.get_hdop()<=5000) {
+        gps_loc = _gps.location();
+        //phikf_app.setGNSS(gps_loc.lat, gps_loc.lng, gps_loc.alt);
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "g: %f %f %f", phikf_app.gps.pos.i, phikf_app.gps.pos.j, phikf_app.gps.pos.k);
+    }
+    
     phikf_app.TimeUpdate();
-    AP::logger().Write("IMUD", "TimeUS,wx,wy,wz,fx,fy,fz, mx,my,mz", "Qfffffffff",
-                        AP_HAL::micros64(), phikf_app.imub.wm.i, phikf_app.imub.wm.j, phikf_app.imub.wm.k,
+    
+    AP::logger().Write("IMUD", "TimeUS,state,wx,wy,wz,fx,fy,fz, mx,my,mz", "QBfffffffff",
+                        AP_HAL::micros64(), phikf_app.state, phikf_app.imub.wm.i, phikf_app.imub.wm.j, phikf_app.imub.wm.k,
                         phikf_app.imub.vm.i, phikf_app.imub.vm.j, phikf_app.imub.vm.k,
                         phikf_app.magb.mag.i, phikf_app.magb.mag.j, phikf_app.magb.mag.k);
     // AP::logger().Write("IMUD", "TimeUS,wx,wy,wz,fx,fy,fz, mx,my,mz", "QBfffffffff",

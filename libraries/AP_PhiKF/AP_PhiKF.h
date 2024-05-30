@@ -1,7 +1,10 @@
-#pragma once
+#ifndef _PHIKF_H_
+#define _PHIKF_H_
+
+// #pragma GCC diagnostic push
+// #pragma GCC diagnostic error "-Wframe-larger-than=24000"
 
 #include <AP_Common/Location.h>
-#include <GCS_MAVLink/GCS.h>
 #include "KFApp.h"
 
 #define STATE_INIT (100)
@@ -21,7 +24,7 @@ class AP_PhiKF
 public:
 	AP_PhiKF(double ts);
 	~AP_PhiKF();
-
+	
 	bool init();
 	void setIMU(double wx, double wy,double wz, double fx, double fy,double fz);
 	void setMag(double mx, double my,double mz);
@@ -60,3 +63,7 @@ public:
 	
 	CVect3 vel_nhc_proc(CVect3 &vn, CMat3 &Cnb);
 };
+
+// #pragma GCC diagnostic pop
+
+#endif

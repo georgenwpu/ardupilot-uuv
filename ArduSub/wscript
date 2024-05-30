@@ -15,6 +15,7 @@ def build(bld):
             'AP_LeakDetector',
             'AP_Motors',
             'AP_TemperatureSensor',
+            'AP_PhiKF',
         ],
     )
 

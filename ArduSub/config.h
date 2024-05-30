@@ -143,10 +143,10 @@
 // Stabilize Rate Control
 //
 #ifndef ROLL_PITCH_INPUT_MAX
-# define ROLL_PITCH_INPUT_MAX      4500            // roll, pitch input range
+# define ROLL_PITCH_INPUT_MAX      8500            // roll, pitch input range
 #endif
 #ifndef DEFAULT_ANGLE_MAX
-# define DEFAULT_ANGLE_MAX         4500            // ANGLE_MAX parameters default value
+# define DEFAULT_ANGLE_MAX         8500            // ANGLE_MAX parameters default value
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
@@ -183,6 +183,9 @@
 # define AUTO_DISARMING_DELAY  0
 #endif
 
+#ifndef AP_PHIKF_ENABLED
+#define AP_PHIKF_ENABLED ENABLED
+#endif
 //////////////////////////////////////////////////////////////////////////////
 // Logging control
 //

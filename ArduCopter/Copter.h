@@ -980,6 +980,10 @@ private:
     // tuning.cpp
     void tuning();
 
+    // phiKF
+#if AP_PHIKF_ENABLED
+    void phiKF_update();
+#endif
     // UserCode.cpp
     void userhook_init();
     void userhook_FastLoop();

@@ -2,9 +2,12 @@
 
 // get_pilot_desired_angle - transform pilot's roll or pitch input into a desired lean angle
 // returns desired angle in centi-degrees
+// angle_max是浮点数，为什么在mode_stabilize.cpp中传入的是浮点数？
 void Sub::get_pilot_desired_lean_angles(float roll_in, float pitch_in, float &roll_out, float &pitch_out, float angle_max)
 {
     // sanity check angle max parameter
+    // 这里又对最大角度做了限制，10<angle_max<80，但是这样真的有意义吗？
+    // 这个限制应当是0-90才对，保证最大角度有意义即可
     aparm.angle_max.set(constrain_int16(aparm.angle_max,1000,8000));
 
     // limit max lean angle
@@ -26,7 +29,7 @@ void Sub::get_pilot_desired_lean_angles(float roll_in, float pitch_in, float &ro
     // do lateral tilt to euler roll conversion
     roll_in = (18000/M_PI) * atanf(cosf(pitch_in*(M_PI/18000))*tanf(roll_in*(M_PI/18000)));
 
-    // return
+    // return , 俯仰角是不变的
     roll_out = roll_in;
     pitch_out = pitch_in;
 }

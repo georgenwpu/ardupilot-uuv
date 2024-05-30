@@ -2087,6 +2087,7 @@ CVect::CVect(int row0, int clm0)
 CVect::CVect(int row0, double f)
 {
 	row=row0; clm=1; rc=row*clm;
+	row = row>PSINS_MATRIX_MAX_DIM?PSINS_MATRIX_MAX_DIM:row;
 	for(int i=0;i<row;i++) dd[i]=f;
 }
 
@@ -3701,34 +3702,34 @@ void CSINSGNSS::Feedback(int nnq, double fbts)
 	}
 	sins.qnb -= *(CVect3*)&FBXk.dd[0];  sins.vn -= *(CVect3*)&FBXk.dd[ 3];  sins.pos -= *(CVect3*)&FBXk.dd[6];
 	sins.eb  += *(CVect3*)&FBXk.dd[9];	sins.db += *(CVect3*)&FBXk.dd[12];  // 0-14 phi,dvn,dpos,eb,db
-	if(nnq==16) {
-		double IdKGzz = 1.0-FBXk.dd[15];
-		sins.Kg.e20*=IdKGzz, sins.Kg.e21*=IdKGzz, sins.Kg.e22*=IdKGzz;  // 15 dKGzz
-	}
-	if(nnq>=18) {
-		lvGNSS += *(CVect3*)&FBXk.dd[15];	// 15-17 lever
-	}
-	if(nnq>=19) {
-		dtGNSSdelay += FBXk.dd[18];			// 18 dt
-	}
-	if(nnq==20) {
-		double IdKGzz = 1.0-FBXk.dd[19];
-		sins.Kg.e20*=IdKGzz, sins.Kg.e21*=IdKGzz, sins.Kg.e22*=IdKGzz;  // 19 dKGzz
-	}
-	else if(nnq==22) {
-		CMat3 IdKGz(1.0,0.0,-FBXk.dd[19], 0.0,1.0,-FBXk.dd[20], 0.0,0.0,1.0-FBXk.dd[21]);
-		sins.Kg = IdKGz*sins.Kg;		// 19-21 dKG*z
-	}
-	else if(nnq>=28) {
-		CMat3 IdKG = I33-(~(*(CMat3*)&FBXk.dd[19]));
-		sins.Kg = IdKG*sins.Kg;			// 19-27 dKG
-	}
-	if(nnq>=34) {
-		CMat3 IdKA(1.0-FBXk.dd[28],            0.0,           0.0,
-			          -FBXk.dd[29],1.0-FBXk.dd[31],           0.0,
-					  -FBXk.dd[30],   -FBXk.dd[32],1.0-FBXk.dd[33]);
-		sins.Ka = IdKA*sins.Ka;			// 28-33 dKA
-	}
+	// if(nnq==16) {
+	// 	double IdKGzz = 1.0-FBXk.dd[15];
+	// 	sins.Kg.e20*=IdKGzz, sins.Kg.e21*=IdKGzz, sins.Kg.e22*=IdKGzz;  // 15 dKGzz
+	// }
+	// if(nnq>=18) {
+	// 	lvGNSS += *(CVect3*)&FBXk.dd[15];	// 15-17 lever
+	// }
+	// if(nnq>=19) {
+	// 	dtGNSSdelay += FBXk.dd[18];			// 18 dt
+	// }
+	// if(nnq==20) {
+	// 	double IdKGzz = 1.0-FBXk.dd[19];
+	// 	sins.Kg.e20*=IdKGzz, sins.Kg.e21*=IdKGzz, sins.Kg.e22*=IdKGzz;  // 19 dKGzz
+	// }
+	// else if(nnq==22) {
+	// 	CMat3 IdKGz(1.0,0.0,-FBXk.dd[19], 0.0,1.0,-FBXk.dd[20], 0.0,0.0,1.0-FBXk.dd[21]);
+	// 	sins.Kg = IdKGz*sins.Kg;		// 19-21 dKG*z
+	// }
+	// else if(nnq>=28) {
+	// 	CMat3 IdKG = I33-(~(*(CMat3*)&FBXk.dd[19]));
+	// 	sins.Kg = IdKG*sins.Kg;			// 19-27 dKG
+	// }
+	// if(nnq>=34) {
+	// 	CMat3 IdKA(1.0-FBXk.dd[28],            0.0,           0.0,
+	// 		          -FBXk.dd[29],1.0-FBXk.dd[31],           0.0,
+	// 				  -FBXk.dd[30],   -FBXk.dd[32],1.0-FBXk.dd[33]);
+	// 	sins.Ka = IdKA*sins.Ka;			// 28-33 dKA
+	// }
 }
 
 void CSINSGNSS::SetMeasGNSS(const CVect3 &posgnss, const CVect3 &vngnss, double yawgnss)
@@ -3943,29 +3944,29 @@ void CSysClbt::SetFt(int nnq)
 void CSysClbt::Feedback(int nnq, double fbts)
 {
 	CKalman::Feedback(nq, fbts);
-#ifndef PSINS_FAST_CALCULATION
-	sins.qnb -= *(CVect3*)&FBXk.dd[0];  sins.vn -= *(CVect3*)&FBXk.dd[3];
-	sins.imu.eb  += *(CVect3*)&FBXk.dd[6];	sins.imu.db += *(CVect3*)&FBXk.dd[9];
-	CMat3 IdKG = I33-(~(*(CMat3*)&FBXk.dd[12]));
-	sins.imu.Kg = IdKG*sins.imu.Kg;			// dKG
-	CMat3 IdKA(1.0-FBXk.dd[21],            0.0,           0.0,
-			      -FBXk.dd[22],1.0-FBXk.dd[24],           0.0,
-				  -FBXk.dd[23],   -FBXk.dd[25],1.0-FBXk.dd[26]);
-	sins.imu.Ka = IdKA*sins.imu.Ka;			// dKA
-	if(sins.imu.pKa2) sins.imu.Ka2 += *(CVect3*)&FBXk.dd[27];  // dKa2
-	else			  sins.imu.Kapn += *(CVect3*)&FBXk.dd[27]; // dKapn
-	sins.imu.lvy += *(CVect3*)&FBXk.dd[30];	sins.imu.lvz += *(CVect3*)&FBXk.dd[33];	// Inner lever
-	sins.imu.tGA += FBXk.dd[36];	// tGA
-#else
-	qdelphi(sins.qnb, *(CVect3*)&FBXk.dd[0]);  VSUBE(sins.vn, (*(CVect3*)&FBXk.dd[3]));
-	VADDE(sins.imu.eb, (*(CVect3*)&FBXk.dd[6]));  VADDE(sins.imu.db, (*(CVect3*)&FBXk.dd[9]));
-	KgMdf(sins.imu.Kg, &FBXk.dd[12], 0);			// dKG
-	KaMdf(sins.imu.Ka, &FBXk.dd[21], 0);			// dKA
-	if(sins.imu.pKa2) { VADDE(sins.imu.Ka2, (*(CVect3*)&FBXk.dd[27])); } // dKa2
-	else			  { VADDE(sins.imu.Kapn, (*(CVect3*)&FBXk.dd[27])); }// dKapn
-	VADDE(sins.imu.lvy, (*(CVect3*)&FBXk.dd[30]));	VADDE(sins.imu.lvz, (*(CVect3*)&FBXk.dd[33]));	// Inner lever
-	sins.imu.tGA += FBXk.dd[36];	// tGA
-#endif
+// #ifndef PSINS_FAST_CALCULATION
+// 	sins.qnb -= *(CVect3*)&FBXk.dd[0];  sins.vn -= *(CVect3*)&FBXk.dd[3];
+// 	sins.imu.eb  += *(CVect3*)&FBXk.dd[6];	sins.imu.db += *(CVect3*)&FBXk.dd[9];
+// 	CMat3 IdKG = I33-(~(*(CMat3*)&FBXk.dd[12]));
+// 	sins.imu.Kg = IdKG*sins.imu.Kg;			// dKG
+// 	CMat3 IdKA(1.0-FBXk.dd[21],            0.0,           0.0,
+// 			      -FBXk.dd[22],1.0-FBXk.dd[24],           0.0,
+// 				  -FBXk.dd[23],   -FBXk.dd[25],1.0-FBXk.dd[26]);
+// 	sins.imu.Ka = IdKA*sins.imu.Ka;			// dKA
+// 	if(sins.imu.pKa2) sins.imu.Ka2 += *(CVect3*)&FBXk.dd[27];  // dKa2
+// 	else			  sins.imu.Kapn += *(CVect3*)&FBXk.dd[27]; // dKapn
+// 	sins.imu.lvy += *(CVect3*)&FBXk.dd[30];	sins.imu.lvz += *(CVect3*)&FBXk.dd[33];	// Inner lever
+// 	sins.imu.tGA += FBXk.dd[36];	// tGA
+// #else
+// 	qdelphi(sins.qnb, *(CVect3*)&FBXk.dd[0]);  VSUBE(sins.vn, (*(CVect3*)&FBXk.dd[3]));
+// 	VADDE(sins.imu.eb, (*(CVect3*)&FBXk.dd[6]));  VADDE(sins.imu.db, (*(CVect3*)&FBXk.dd[9]));
+// 	KgMdf(sins.imu.Kg, &FBXk.dd[12], 0);			// dKG
+// 	KaMdf(sins.imu.Ka, &FBXk.dd[21], 0);			// dKA
+// 	if(sins.imu.pKa2) { VADDE(sins.imu.Ka2, (*(CVect3*)&FBXk.dd[27])); } // dKa2
+// 	else			  { VADDE(sins.imu.Kapn, (*(CVect3*)&FBXk.dd[27])); }// dKapn
+// 	VADDE(sins.imu.lvy, (*(CVect3*)&FBXk.dd[30]));	VADDE(sins.imu.lvz, (*(CVect3*)&FBXk.dd[33]));	// Inner lever
+// 	sins.imu.tGA += FBXk.dd[36];	// tGA
+// #endif
 }
 
 int CSysClbt::Update(const CVect3 *pwm, const CVect3 *pvm, int nn, double ts, int isStatic)
@@ -4155,8 +4156,8 @@ void CAutoDrive::SetHk(int nnq)
 void CAutoDrive::Feedback(int nnq, double fbts)
 {
 	CSINSGNSS::Feedback(15, fbts);
-	Cbo = Cbo*a2mat(CVect3(FBXk.dd[15],0.0,FBXk.dd[17]));
-	Kod *= 1 - FBXk.dd[16];
+	// Cbo = Cbo*a2mat(CVect3(FBXk.dd[15],0.0,FBXk.dd[17]));
+	// Kod *= 1 - FBXk.dd[16];
 }
 
 void CAutoDrive::ZUPTtest(void)
@@ -4176,9 +4177,9 @@ void CAutoDrive::ZIHRtest(void)
 	wzhd.Update(sins.imu.phim.k/sins.nts);
 	if(wzhd.retres==3 && sins.fn.k>9.5 && odVel<1.0e-6) {
 //		Zk.dd[16] = wzhd.meanwpre-sins.eth.wnie.k;
-		Zk.dd[16] = wzhd.meanw-sins.eth.wnie.k;
+		//Zk.dd[16] = wzhd.meanw-sins.eth.wnie.k;
 		SetMeasFlag(0200000);     SetMeasStop(0100000,wzhd.T);
-		Xk.dd[2] -= Zk.dd[16]*wzhd.T;    //	sins.qnb -= CVect3(0,0,-Zk.dd[16]*wzhd.T);
+		//Xk.dd[2] -= Zk.dd[16]*wzhd.T;    //	sins.qnb -= CVect3(0,0,-Zk.dd[16]*wzhd.T);
 	}
 }
 
@@ -4268,13 +4269,13 @@ void CSGOClbt::SetHk(int nnq)
 
 void CSGOClbt::Feedback(int nnq, double fbts)
 {
-	CSINSGNSS::Feedback(18, fbts);
-	Cbo = Cbo*a2mat(CVect3(FBXk.dd[18],0.0,FBXk.dd[20]));
-	Kod *= 1.0-FBXk.dd[19];
-	lvOD += *(CVect3*)&FBXk.dd[21]; 
-	dtGNSSdelay += FBXk.dd[24];
-	dyawGNSS += FBXk.dd[25];
-	sins.Kg.e22 *= 1.0-FBXk.dd[26];
+	// CSINSGNSS::Feedback(18, fbts);
+	// Cbo = Cbo*a2mat(CVect3(FBXk.dd[18],0.0,FBXk.dd[20]));
+	// Kod *= 1.0-FBXk.dd[19];
+	// lvOD += *(CVect3*)&FBXk.dd[21]; 
+	// dtGNSSdelay += FBXk.dd[24];
+	// dyawGNSS += FBXk.dd[25];
+	// sins.Kg.e22 *= 1.0-FBXk.dd[26];
 }
 
 int CSGOClbt::Update(const CVect3 *pwm, const CVect3 *pvm, double dS, int nn, double ts, int nSteps)
@@ -4323,8 +4324,8 @@ void CVAutoPOS::SetHk(int nnq)
 void CVAutoPOS::Feedback(int nnq, double fbts)
 {
 	CSINSGNSS::Feedback(15, fbts);
-	Cbo = Cbo*a2mat(CVect3(FBXk.dd[15],0.0,FBXk.dd[17]));
-	Kod *= 1 - FBXk.dd[16];
+	// Cbo = Cbo*a2mat(CVect3(FBXk.dd[15],0.0,FBXk.dd[17]));
+	// Kod *= 1 - FBXk.dd[16];
 }
 
 int CVAutoPOS::Update(const CVect3 *pwm, const CVect3 *pvm, double dS, int nn, double ts, int nSteps)
@@ -6670,8 +6671,8 @@ void CAligntf::Feedback(int nnq, double fbts)
 	CKalman::Feedback(nq, fbts);
 	sins.qnb -= *(CVect3*)&FBXk.dd[0];  sins.vn -= *(CVect3*)&FBXk.dd[ 3];  mu += *(CVect3*)&FBXk.dd[6];
 	sins.eb  += *(CVect3*)&FBXk.dd[9];	sins.db += *(CVect3*)&FBXk.dd[12];  // 0-14 phi,dvn,mu,eb,db
-	lvMINS += *(CVect3*)&FBXk.dd[15];	// 15-17 lever
-	dtMINSdelay += FBXk.dd[18];			// 18 dt
+	//lvMINS += *(CVect3*)&FBXk.dd[15];	// 15-17 lever
+	//dtMINSdelay += FBXk.dd[18];			// 18 dt
 }
 
 int CAligntf::Update(const CVect3 *pwm, const CVect3 *pvm, int nSamples, double ts, int nSteps)
@@ -6731,15 +6732,15 @@ unsigned int swap32(unsigned int ui32)
 	return ui32;
 }
 
-unsigned long swap64(unsigned long ui64)
-{
-	unsigned char *p = (unsigned char*)&ui64, c;
-	c = p[0]; p[0] = p[7]; p[7] = c;
-	c = p[1]; p[1] = p[6]; p[6] = c;
-	c = p[2]; p[2] = p[5]; p[5] = c;
-	c = p[3]; p[3] = p[4]; p[4] = c;
-	return ui64;
-}
+// unsigned long swap64(unsigned long ui64)
+// {
+// 	unsigned char *p = (unsigned char*)&ui64, c;
+// 	c = p[0]; p[0] = p[7]; p[7] = c;
+// 	c = p[1]; p[1] = p[6]; p[6] = c;
+// 	c = p[2]; p[2] = p[5]; p[5] = c;
+// 	c = p[3]; p[3] = p[4]; p[4] = c;
+// 	return ui64;
+// }
 
 unsigned char* int24(unsigned char *pchar3, int int32)
 {

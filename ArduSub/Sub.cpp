@@ -39,7 +39,7 @@ Sub::Sub()
           circle_nav(inertial_nav, ahrs_view, pos_control),
           param_loader(var_info),
           flightmode(&mode_manual),
-          px4navapp(KFTS)
+          phikf_app(TS)
 {
 #if CONFIG_HAL_BOARD != HAL_BOARD_SITL
     failsafe.pilot_input = true;
@@ -52,5 +52,5 @@ Sub::Sub()
 
 Sub *Sub::_singleton = nullptr;
 
-Sub sub;
-AP_Vehicle& vehicle = sub;
+Sub ardusub;
+AP_Vehicle& vehicle = ardusub;

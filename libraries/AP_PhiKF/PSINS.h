@@ -6,6 +6,9 @@ Northwestern Polytechnical University, Xi'an, P.R.China.
 Date: 17/02/2015, 19/07/2017, 11/12/2018, 27/12/2019, 12/12/2020, 22/11/2021, 17/10/2022, 23/09/2023
 */
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic error "-Wframe-larger-than=124000"
+
 #ifndef _PSINS_H
 #define _PSINS_H
 
@@ -20,7 +23,8 @@ Date: 17/02/2015, 19/07/2017, 11/12/2018, 27/12/2019, 12/12/2020, 22/11/2021, 17
 #pragma pack(4)
 
 /************** compiling control !!! ***************/
-#define PSINS_MATRIX_MAX_DIM	46
+#define PSINS_MATRIX_MAX_DIM	40
+
 //#define PSINS_IO_FILE
 //#define PSINS_IO_FILE_FIND
 #define PSINS_AHRS_MEMS
@@ -1502,3 +1506,4 @@ void AXbt(CVect3 &res, const CMat3 &A, const CVect3 &X, const CVect3 &b, const d
 #pragma pack()
 
 #endif // _PSINS_H
+

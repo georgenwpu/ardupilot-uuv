@@ -547,7 +547,7 @@ bool Sub::verify_circle(const AP_Mission::Mission_Command& cmd)
     const float turns = cmd.get_loiter_turns();
 
     // check if we have completed circling
-    return fabsf(sub.circle_nav.get_angle_total()/M_2PI) >= turns;
+    return fabsf(ardusub.circle_nav.get_angle_total()/M_2PI) >= turns;
 }
 
 #if NAV_GUIDED == ENABLED
@@ -591,7 +591,7 @@ void Sub::do_within_distance(const AP_Mission::Mission_Command& cmd)
 
 void Sub::do_yaw(const AP_Mission::Mission_Command& cmd)
 {
-    sub.mode_auto.set_auto_yaw_look_at_heading(
+    ardusub.mode_auto.set_auto_yaw_look_at_heading(
         cmd.content.yaw.angle_deg,
         cmd.content.yaw.turn_rate_dps,
         cmd.content.yaw.direction,
@@ -626,7 +626,7 @@ bool Sub::verify_yaw()
 {
     // set yaw mode if it has been changed (the waypoint controller often retakes control of yaw as it executes a new waypoint command)
     if (auto_yaw_mode != AUTO_YAW_LOOK_AT_HEADING) {
-        sub.mode_auto.set_auto_yaw_mode(AUTO_YAW_LOOK_AT_HEADING);
+        ardusub.mode_auto.set_auto_yaw_mode(AUTO_YAW_LOOK_AT_HEADING);
     }
 
     // check if we are within 2 degrees of the target heading
@@ -650,7 +650,7 @@ bool Sub::do_guided(const AP_Mission::Mission_Command& cmd)
 
     case MAV_CMD_NAV_WAYPOINT: {
         // set wp_nav's destination
-        return sub.mode_guided.guided_set_destination(cmd.content.location);
+        return ardusub.mode_guided.guided_set_destination(cmd.content.location);
     }
 
     case MAV_CMD_CONDITION_YAW:
@@ -691,7 +691,7 @@ void Sub::do_set_home(const AP_Mission::Mission_Command& cmd)
 //  TO-DO: add support for other features of MAV_CMD_DO_SET_ROI including pointing at a given waypoint
 void Sub::do_roi(const AP_Mission::Mission_Command& cmd)
 {
-    sub.mode_auto.set_auto_yaw_roi(cmd.content.location);
+    ardusub.mode_auto.set_auto_yaw_roi(cmd.content.location);
 }
 
 // point the camera to a specified angle

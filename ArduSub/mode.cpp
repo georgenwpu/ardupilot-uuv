@@ -4,20 +4,20 @@
   constructor for Mode object
  */
 Mode::Mode(void) :
-    g(sub.g),
-    g2(sub.g2),
-    inertial_nav(sub.inertial_nav),
-    ahrs(sub.ahrs),
-    motors(sub.motors),
-    channel_roll(sub.channel_roll),
-    channel_pitch(sub.channel_pitch),
-    channel_throttle(sub.channel_throttle),
-    channel_yaw(sub.channel_yaw),
-    channel_forward(sub.channel_forward),
-    channel_lateral(sub.channel_lateral),
-    position_control(&sub.pos_control),
-    attitude_control(&sub.attitude_control),
-    G_Dt(sub.G_Dt)
+    g(ardusub.g),
+    g2(ardusub.g2),
+    inertial_nav(ardusub.inertial_nav),
+    ahrs(ardusub.ahrs),
+    motors(ardusub.motors),
+    channel_roll(ardusub.channel_roll),
+    channel_pitch(ardusub.channel_pitch),
+    channel_throttle(ardusub.channel_throttle),
+    channel_yaw(ardusub.channel_yaw),
+    channel_forward(ardusub.channel_forward),
+    channel_lateral(ardusub.channel_lateral),
+    position_control(&ardusub.pos_control),
+    attitude_control(&ardusub.attitude_control),
+    G_Dt(ardusub.G_Dt)
 { };
 
 // return the static controller object corresponding to supplied mode
@@ -59,6 +59,9 @@ Mode *Sub::mode_from_mode_num(const Mode::Number mode)
     case Mode::Number::MOTOR_DETECT:
         ret = &mode_motordetect;
         break;
+    case Mode::Number::STANDMOV:
+        ret = &mode_motordetect;
+        break;
     default:
         break;
     }
@@ -87,7 +90,7 @@ bool Sub::set_mode(Mode::Number mode, ModeReason reason)
     }
 
     if (new_flightmode->requires_GPS() &&
-        !sub.position_ok()) {
+        !ardusub.position_ok()) {
         gcs().send_text(MAV_SEVERITY_WARNING, "Mode change failed: %s requires position", new_flightmode->name());
         LOGGER_WRITE_ERROR(LogErrorSubsystem::FLIGHT_MODE, LogErrorCode(mode));
         return false;
@@ -95,7 +98,7 @@ bool Sub::set_mode(Mode::Number mode, ModeReason reason)
 
     // check for valid altitude if old mode did not require it but new one does
     // we only want to stop changing modes if it could make things worse
-    if (!sub.control_check_barometer() && // maybe use ekf_alt_ok() instead?
+    if (!ardusub.control_check_barometer() && // maybe use ekf_alt_ok() instead?
         flightmode->has_manual_throttle() &&
         !new_flightmode->has_manual_throttle()) {
         gcs().send_text(MAV_SEVERITY_WARNING, "Mode change failed: %s need alt estimate", new_flightmode->name());
@@ -148,7 +151,7 @@ void Sub::exit_mode(Mode::Number old_control_mode, Mode::Number new_control_mode
 bool Sub::set_mode(const uint8_t new_mode, const ModeReason reason)
 {
     static_assert(sizeof(Mode::Number) == sizeof(new_mode), "The new mode can't be mapped to the vehicles mode number");
-    return sub.set_mode(static_cast<Mode::Number>(new_mode), reason);
+    return ardusub.set_mode(static_cast<Mode::Number>(new_mode), reason);
 }
 
 // update_flight_mode - calls the appropriate attitude controllers based on flight mode
@@ -235,16 +238,16 @@ void Mode::get_pilot_desired_angle_rates(int16_t roll_in, int16_t pitch_in, int1
 
         // Calculate angle limiting earth frame rate commands
         if (g.acro_trainer == ACRO_TRAINER_LIMITED) {
-            if (roll_angle > sub.aparm.angle_max) {
-                rate_ef_level.x -=  g.acro_balance_roll*(roll_angle-sub.aparm.angle_max);
-            } else if (roll_angle < -sub.aparm.angle_max) {
-                rate_ef_level.x -=  g.acro_balance_roll*(roll_angle+sub.aparm.angle_max);
+            if (roll_angle > ardusub.aparm.angle_max) {
+                rate_ef_level.x -=  g.acro_balance_roll*(roll_angle-ardusub.aparm.angle_max);
+            } else if (roll_angle < -ardusub.aparm.angle_max) {
+                rate_ef_level.x -=  g.acro_balance_roll*(roll_angle+ardusub.aparm.angle_max);
             }
 
-            if (pitch_angle > sub.aparm.angle_max) {
-                rate_ef_level.y -=  g.acro_balance_pitch*(pitch_angle-sub.aparm.angle_max);
-            } else if (pitch_angle < -sub.aparm.angle_max) {
-                rate_ef_level.y -=  g.acro_balance_pitch*(pitch_angle+sub.aparm.angle_max);
+            if (pitch_angle > ardusub.aparm.angle_max) {
+                rate_ef_level.y -=  g.acro_balance_pitch*(pitch_angle-ardusub.aparm.angle_max);
+            } else if (pitch_angle < -ardusub.aparm.angle_max) {
+                rate_ef_level.y -=  g.acro_balance_pitch*(pitch_angle+ardusub.aparm.angle_max);
             }
         }
 
@@ -288,10 +291,10 @@ void Mode::get_pilot_desired_angle_rates(int16_t roll_in, int16_t pitch_in, int1
 
 bool Mode::set_mode(Mode::Number mode, ModeReason reason)
 {
-    return sub.set_mode(mode, reason);
+    return ardusub.set_mode(mode, reason);
 }
 
 GCS_Sub &Mode::gcs()
 {
-    return sub.gcs();
+    return ardusub.gcs();
 }

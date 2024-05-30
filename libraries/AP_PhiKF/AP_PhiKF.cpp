@@ -31,26 +31,32 @@ bool AP_PhiKF::init()
 
 void AP_PhiKF::setIMU(double wx, double wy,double wz, double fx, double fy,double fz)
 {
-	imub.wm.i = wx;
-	imub.wm.j = wy;
-	imub.wm.k = wz;
-	imub.vm.i = fx;
-	imub.vm.j = fy;
-	imub.vm.k = fz;
+	imub.wm.i = -wx;
+	imub.wm.j = -wy;
+	imub.wm.k = -wz;
+	imub.vm.i = -fx;
+	imub.vm.j = -fy;
+	imub.vm.k = -fz;
 	imub.wm = imub.wm*DEG*ts;
-	imub.vm = imub.vm*DEG*ts;
+	imub.vm = imub.vm*ts;
 }
 
 void AP_PhiKF::setMag(double mx, double my,double mz)
 {
-	magb.mag.i = mx;
-	magb.mag.j = my;
-	magb.mag.k = mz;
+	magb.mag.i = -mx;
+	magb.mag.j = -my;
+	magb.mag.k = -mz;
 }
 
 void AP_PhiKF::setGNSS(double vE, double vN, double vU, double Lat, double Lng, double Alt)
 {
-
+	gps.vn.i = vE;
+	gps.vn.j = vN;
+	gps.vn.k = vU;
+	gps.pos.i = Lat*1e-7*DEG;
+	gps.pos.j = Lng*1e-7*DEG;
+	gps.pos.k = Alt*0.01;
+	gnssUdt = true;
 }
 
 void AP_PhiKF::TimeUpdate()
@@ -96,7 +102,7 @@ void AP_PhiKF::TimeUpdate()
 	else if (state == STATE_CLBT)	// 导航定位过程
 	{
 		if (gnssUdt) {
-			kf.Init(CSINS(ins_avp.att, CVect3(0.0,0.0,0.0), ins_avp.pos, t_nav));
+			kf.Init(CSINS(ins_avp.att, CVect3(0.0,0.0,0.0), gps.pos, t_nav));
 			kf.SetHk(magn);
 			state = STATE_NAVI;		// 切换到标定补偿状态
 		}

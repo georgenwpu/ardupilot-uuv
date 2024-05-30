@@ -17,8 +17,8 @@
 
 #include "Sub.h"
 
-#define SCHED_TASK(func, rate_hz, max_time_micros, priority) SCHED_TASK_CLASS(Sub, &sub, func, rate_hz, max_time_micros, priority)
-#define FAST_TASK(func) FAST_TASK_CLASS(Sub, &sub, func)
+#define SCHED_TASK(func, rate_hz, max_time_micros, priority) SCHED_TASK_CLASS(Sub, &ardusub, func, rate_hz, max_time_micros, priority)
+#define FAST_TASK(func) FAST_TASK_CLASS(Sub, &ardusub, func)
 
 /*
   scheduler table - all tasks should be listed here.
@@ -47,7 +47,7 @@ SCHED_TASK_CLASS arguments:
 
 const AP_Scheduler::Task Sub::scheduler_tasks[] = {
     // update INS immediately to get current gyro data populated
-    FAST_TASK_CLASS(AP_InertialSensor, &sub.ins, update),
+    FAST_TASK_CLASS(AP_InertialSensor, &ardusub.ins, update),
     // run low level rate controllers that only require IMU data
     FAST_TASK(run_rate_controller),
     // send outputs to the motors library immediately
@@ -66,42 +66,42 @@ const AP_Scheduler::Task Sub::scheduler_tasks[] = {
     FAST_TASK(update_surface_and_bottom_detector),
 #if HAL_MOUNT_ENABLED
     // camera mount's fast update
-    FAST_TASK_CLASS(AP_Mount, &sub.camera_mount, update_fast),
+    FAST_TASK_CLASS(AP_Mount, &ardusub.camera_mount, update_fast),
 #endif
 
-#ifdef ECKB_NAV
-    SCHED_TASK_CLASS(px4navapp,         100,     150,   3),
-#endif
     SCHED_TASK(fifty_hz_loop,         50,     75,   3),
-    SCHED_TASK_CLASS(AP_GPS, &sub.gps, update, 50, 200,   6),
+    SCHED_TASK_CLASS(AP_GPS, &ardusub.gps, update, 50, 200,   6),
 #if AP_OPTICALFLOW_ENABLED
-    SCHED_TASK_CLASS(AP_OpticalFlow,          &sub.optflow,             update,         200, 160,   9),
+    SCHED_TASK_CLASS(AP_OpticalFlow,          &ardusub.optflow,             update,         200, 160,   9),
 #endif
+
+    SCHED_TASK(phiKF_update,   100,    50,  10),
+
     SCHED_TASK(update_batt_compass,   10,    120,  12),
     SCHED_TASK(read_rangefinder,      20,    100,  15),
     SCHED_TASK(update_altitude,       10,    100,  18),
     SCHED_TASK(three_hz_loop,          3,     75,  21),
     SCHED_TASK(update_turn_counter,   10,     50,  24),
     SCHED_TASK(one_hz_loop,            1,    100,  33),
-    SCHED_TASK_CLASS(GCS,                 (GCS*)&sub._gcs,   update_receive,     400, 180,  36),
-    SCHED_TASK_CLASS(GCS,                 (GCS*)&sub._gcs,   update_send,        400, 550,  39),
+    SCHED_TASK_CLASS(GCS,                 (GCS*)&ardusub._gcs,   update_receive,     400, 180,  36),
+    SCHED_TASK_CLASS(GCS,                 (GCS*)&ardusub._gcs,   update_send,        400, 550,  39),
 #if HAL_MOUNT_ENABLED
-    SCHED_TASK_CLASS(AP_Mount,            &sub.camera_mount, update,              50,  75,  45),
+    SCHED_TASK_CLASS(AP_Mount,            &ardusub.camera_mount, update,              50,  75,  45),
 #endif
 #if AP_CAMERA_ENABLED
-    SCHED_TASK_CLASS(AP_Camera,           &sub.camera,       update,              50,  75,  48),
+    SCHED_TASK_CLASS(AP_Camera,           &ardusub.camera,       update,              50,  75,  48),
 #endif
 #if HAL_LOGGING_ENABLED
     SCHED_TASK(ten_hz_logging_loop,   10,    350,  51),
     SCHED_TASK(twentyfive_hz_logging, 25,    110,  54),
-    SCHED_TASK_CLASS(AP_Logger,           &sub.logger,       periodic_tasks,     400, 300,  57),
+    SCHED_TASK_CLASS(AP_Logger,           &ardusub.logger,       periodic_tasks,     400, 300,  57),
 #endif
-    SCHED_TASK_CLASS(AP_InertialSensor,   &sub.ins,          periodic,           400,  50,  60),
+    SCHED_TASK_CLASS(AP_InertialSensor,   &ardusub.ins,          periodic,           400,  50,  60),
 #if HAL_LOGGING_ENABLED
-    SCHED_TASK_CLASS(AP_Scheduler,        &sub.scheduler,    update_logging,     0.1,  75,  63),
+    SCHED_TASK_CLASS(AP_Scheduler,        &ardusub.scheduler,    update_logging,     0.1,  75,  63),
 #endif
 #if AP_RPM_ENABLED
-    SCHED_TASK_CLASS(AP_RPM,              &sub.rpm_sensor,   update,              10, 200,  66),
+    SCHED_TASK_CLASS(AP_RPM,              &ardusub.rpm_sensor,   update,              10, 200,  66),
 #endif
     SCHED_TASK(terrain_update,        10,    100,  72),
 #if AP_STATS_ENABLED
@@ -206,7 +206,7 @@ void Sub::ten_hz_logging_loop()
     if (should_log(MASK_LOG_RCOUT)) {
         logger.Write_RCOUT();
     }
-    if (should_log(MASK_LOG_NTUN) && (sub.flightmode->requires_GPS() || !sub.flightmode->has_manual_throttle())) {
+    if (should_log(MASK_LOG_NTUN) && (ardusub.flightmode->requires_GPS() || !ardusub.flightmode->has_manual_throttle())) {
         pos_control.write_log();
     }
     if (should_log(MASK_LOG_IMU) || should_log(MASK_LOG_IMU_FAST) || should_log(MASK_LOG_IMU_RAW)) {
@@ -352,7 +352,7 @@ bool Sub::control_check_barometer()
 bool Sub::get_wp_distance_m(float &distance) const
 {
     // see GCS_MAVLINK_Sub::send_nav_controller_output()
-    distance = sub.wp_nav.get_wp_distance_to_destination() * 0.01;
+    distance = ardusub.wp_nav.get_wp_distance_to_destination() * 0.01;
     return true;
 }
 
@@ -360,7 +360,7 @@ bool Sub::get_wp_distance_m(float &distance) const
 bool Sub::get_wp_bearing_deg(float &bearing) const
 {
     // see GCS_MAVLINK_Sub::send_nav_controller_output()
-    bearing = sub.wp_nav.get_wp_bearing_to_destination() * 0.01;
+    bearing = ardusub.wp_nav.get_wp_bearing_to_destination() * 0.01;
     return true;
 }
 
@@ -432,4 +432,52 @@ float Sub::get_alt_msl() const
     return -posD;
 }
 
-AP_HAL_MAIN_CALLBACKS(&sub);
+/**
+ * @brief 更新PhiKF
+ *
+ * 此函数用于更新PhiKF的状态和参数。
+ * 通过读取惯性测量单元(IMU)、磁力计和GPS的数据，进行PhiKF的处理。
+ * 最后，将处理结果写入日志。
+ */
+void Sub::phiKF_update()
+{
+    const auto &_ins = AP::ins();
+    const auto &_compass = AP::compass();
+    const auto &_gps = AP::gps();
+    Vector3f delta_angle, delta_velocity, omg, fsf, mag;
+    float dangle_dt, magnorm;
+    Location gps_loc;
+
+    // Adding PhiKF processing
+    _ins.get_delta_angle(delta_angle, dangle_dt);
+    omg = delta_angle / dangle_dt;
+    _ins.get_delta_velocity(delta_velocity, dangle_dt);
+    fsf = delta_velocity / dangle_dt;
+    if (_compass.available()) {
+        const Vector3f &field_Ga = _compass.get_field();
+        magnorm = field_Ga.x*field_Ga.x + field_Ga.y*field_Ga.y + field_Ga.z*field_Ga.z;
+        if(magnorm>1e-6) mag = field_Ga/magnorm;
+    }
+    
+    phikf_app.setIMU(omg.x, omg.y, omg.z, fsf.x, fsf.y, fsf.z);
+    phikf_app.setMag(mag.x, mag.y, mag.z);
+
+    if (_gps.get_hdop()<=5000) {
+        gps_loc = _gps.location();
+        //phikf_app.setGNSS(gps_loc.lat, gps_loc.lng, gps_loc.alt);
+        GCS_SEND_TEXT(MAV_SEVERITY_WARNING, "g: %f %f %f", phikf_app.gps.pos.i, phikf_app.gps.pos.j, phikf_app.gps.pos.k);
+    }
+    
+    phikf_app.TimeUpdate();
+    
+    AP::logger().Write("IMUD", "TimeUS,state,wx,wy,wz,fx,fy,fz, mx,my,mz", "QBfffffffff",
+                        AP_HAL::micros64(), phikf_app.state, phikf_app.imub.wm.i, phikf_app.imub.wm.j, phikf_app.imub.wm.k,
+                        phikf_app.imub.vm.i, phikf_app.imub.vm.j, phikf_app.imub.vm.k,
+                        phikf_app.magb.mag.i, phikf_app.magb.mag.j, phikf_app.magb.mag.k);
+    AP::logger().Write("PNAV", "TimeUS, pitch,roll,yaw, vE,vN,vU, Lat,Lng,Alt", "Qfffffffff",
+                        AP_HAL::micros64(), phikf_app.ins_avp.att.i, phikf_app.ins_avp.att.j, phikf_app.ins_avp.att.k,
+                        phikf_app.ins_avp.vn.i, phikf_app.ins_avp.vn.j, phikf_app.ins_avp.vn.k,
+                        phikf_app.ins_avp.pos.i, phikf_app.ins_avp.pos.j, phikf_app.ins_avp.pos.k);
+}
+
+AP_HAL_MAIN_CALLBACKS(&ardusub);

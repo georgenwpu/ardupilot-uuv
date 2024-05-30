@@ -167,8 +167,8 @@ void ModeMotordetect::run()
         break;
     }
     case DONE:
-        set_mode(sub.prev_control_mode, ModeReason::MISSION_END);
-        sub.arming.disarm(AP_Arming::Method::MOTORDETECTDONE);
+        set_mode(ardusub.prev_control_mode, ModeReason::MISSION_END);
+        ardusub.arming.disarm(AP_Arming::Method::MOTORDETECTDONE);
         break;
     }
 }

@@ -61,8 +61,7 @@ void Sub::transform_manual_control_to_rc_override(int16_t x, int16_t y, int16_t 
             int16_t aux5,
             int16_t aux6)
 {
-
-    float rpyScale = 0.4*gain; // Scale -1000-1000 to -400-400 with gain
+    float rpyScale = 0.8*gain; // Scale -1000-1000 to -400-400 with gain
     float throttleScale = 0.8*gain*g.throttle_gain; // Scale 0-1000 to 0-800 times gain
     int16_t rpyCenter = 1500;
     int16_t throttleBase = 1500-500*throttleScale;
@@ -195,6 +194,9 @@ void Sub::handle_jsbutton_press(uint8_t _button, bool shift, bool held)
         set_mode(Mode::Number::SURFTRAK, ModeReason::RC_COMMAND);
         break;
 #endif
+    case JSButton::button_function_t::k_mode_standmov:
+        set_mode(Mode::Number::STANDMOV, ModeReason::RC_COMMAND);
+        break;
 
     case JSButton::button_function_t::k_mount_center:
 #if HAL_MOUNT_ENABLED
@@ -610,16 +612,16 @@ void Sub::handle_jsbutton_press(uint8_t _button, bool shift, bool held)
 
 #if AP_SCRIPTING_ENABLED
     case JSButton::button_function_t::k_script_1:
-        sub.script_buttons[0].press();
+        ardusub.script_buttons[0].press();
         break;
     case JSButton::button_function_t::k_script_2:
-        sub.script_buttons[1].press();
+        ardusub.script_buttons[1].press();
         break;
     case JSButton::button_function_t::k_script_3:
-        sub.script_buttons[2].press();
+        ardusub.script_buttons[2].press();
         break;
     case JSButton::button_function_t::k_script_4:
-        sub.script_buttons[3].press();
+        ardusub.script_buttons[3].press();
         break;
 #endif // AP_SCRIPTING_ENABLED
     }
@@ -669,16 +671,16 @@ void Sub::handle_jsbutton_release(uint8_t _button, bool shift) {
 
 #if AP_SCRIPTING_ENABLED
     case JSButton::button_function_t::k_script_1:
-        sub.script_buttons[0].release();
+        ardusub.script_buttons[0].release();
         break;
     case JSButton::button_function_t::k_script_2:
-        sub.script_buttons[1].release();
+        ardusub.script_buttons[1].release();
         break;
     case JSButton::button_function_t::k_script_3:
-        sub.script_buttons[2].release();
+        ardusub.script_buttons[2].release();
         break;
     case JSButton::button_function_t::k_script_4:
-        sub.script_buttons[3].release();
+        ardusub.script_buttons[3].release();
         break;
 #endif // AP_SCRIPTING_ENABLED
     }
@@ -764,7 +766,7 @@ void Sub::default_js_buttons()
     JSButton::button_function_t defaults[16][2] = {
         {JSButton::button_function_t::k_none,                   JSButton::button_function_t::k_none},
         {JSButton::button_function_t::k_mode_manual,            JSButton::button_function_t::k_none},
-        {JSButton::button_function_t::k_mode_depth_hold,        JSButton::button_function_t::k_none},
+        {JSButton::button_function_t::k_mode_standmov,          JSButton::button_function_t::k_none},
         {JSButton::button_function_t::k_mode_stabilize,         JSButton::button_function_t::k_none},
 
         {JSButton::button_function_t::k_disarm,                 JSButton::button_function_t::k_none},

@@ -23,6 +23,7 @@ public:
         k_mode_guided           = 11,           ///< enter guided mode
         k_mode_acro             = 12,           ///< enter acro mode
         k_mode_surftrak         = 13,           ///< enter surftrak mode
+        k_mode_standmov         = 14,           ///< enter standmov mode
 
         // 14-20 reserved for future mode functions
         k_mount_center          = 21,           ///< move mount to center
